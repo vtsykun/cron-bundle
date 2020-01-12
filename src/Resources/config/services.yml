@@ -75,3 +75,16 @@ services:
         class: Okvpn\Bundle\CronBundle\Runner\ScheduleRunner
         arguments:
             - !tagged okvpn_cron.middleware
+
+    Okvpn\Bundle\CronBundle\Command\CronCommand:
+        arguments:
+            - '@okvpn_cron.runner_default'
+            - '@okvpn_cron.loader_default'
+        tags:
+            - { name: console.command }
+
+    Okvpn\Bundle\CronBundle\Command\CronExecuteCommand:
+        arguments:
+            - '@okvpn_cron.runner_default'
+        tags:
+            - { name: console.command }
