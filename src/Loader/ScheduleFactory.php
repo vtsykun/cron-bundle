@@ -9,6 +9,7 @@ use Okvpn\Bundle\CronBundle\Model\AsyncStamp;
 use Okvpn\Bundle\CronBundle\Model\LockStamp;
 use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
 use Okvpn\Bundle\CronBundle\Model\ScheduleStamp;
+use Okvpn\Bundle\CronBundle\Model\ShellStamp;
 
 final class ScheduleFactory implements ScheduleFactoryInterface
 {
@@ -43,12 +44,16 @@ final class ScheduleFactory implements ScheduleFactoryInterface
         if (isset($config['arguments'])) {
             $stamps[] = new ArgumentsStamp($config['arguments']);
         }
-        if (isset($config['async'])) {
+        if (isset($config['async']) && $config['async']) {
             $stamps[] = new AsyncStamp();
         }
+        if (isset($config['shell']) && $config['shell']) {
+            $stamps[] = new ShellStamp();
+        }
 
-        foreach ($this->withStampsFqcn as $stampsFqcn) {
-            $stamps[] = new $stampsFqcn($config);
+        $withStampsFqcn = array_merge($config['options']['with'] ?? [], $this->withStampsFqcn);
+        foreach ($withStampsFqcn as $stampFqcn) {
+            $stamps[] = new $stampFqcn($config);
         }
 
         return new ScheduleEnvelope($commandName, ...$stamps);

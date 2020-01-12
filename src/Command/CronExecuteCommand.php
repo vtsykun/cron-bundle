@@ -4,30 +4,35 @@ declare(strict_types=1);
 
 namespace Okvpn\Bundle\CronBundle\Command;
 
+use Okvpn\Bundle\CronBundle\Runner\ScheduleRunnerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * @internal
+ */
 class CronExecuteCommand extends Command
 {
-    public static $defaultName = 'okvpn:cron:execute';
+    public static $defaultName = 'okvpn:cron:execute-job';
 
-    private $redis;
-    private $cronEngine;
+    private $scheduleRunner;
 
-    public function __construct()
+    public function __construct(ScheduleRunnerInterface $scheduleRunner)
     {
+        $this->scheduleRunner = $scheduleRunner;
+
         parent::__construct(null);
     }
 
     /**
      * {@inheritDoc}
      */
-    protected function configure()
+    protected function configure(): void
     {
-        $this->addArgument('job', InputArgument::REQUIRED, 'Cron job id')
-            ->setDescription('Execute cron command for job id');
+        $this->addArgument('filename', InputArgument::REQUIRED, 'PHP serialized cron job')
+            ->setDescription('INTERNAL!!!. Execute cron command from file.');
     }
 
     /**
@@ -35,12 +40,13 @@ class CronExecuteCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $command = $this->redis->get($input->getArgument('job'));
-        if (empty($command)) {
-            $output->writeln('Job not found');
-        }
-        $command = json_decode($command, true);
+        $fileContent = file_get_contents($input->getOption('filename'));
+        $envelope = unserialize($fileContent);
 
-        $this->cronEngine->run($command['command'], $command['arguments'] ?? []);
+        try {
+            $this->scheduleRunner->execute($envelope);
+        } finally {
+            @unlink($input->getOption('filename'));
+        }
     }
 }

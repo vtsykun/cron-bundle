@@ -27,7 +27,7 @@ final class ServiceInvokeEngine implements MiddlewareEngineInterface
             return $stack->next()->handle($envelope, $stack);
         }
 
-        $handler = $envelope->get($envelope->getCommand());
+        $handler = $this->container->get($envelope->getCommand());
         if (is_callable($handler)) {
             $commandArguments = $envelope->get(ArgumentsStamp::class) ?
                 $envelope->get(ArgumentsStamp::class)->getArguments() : [];

@@ -1,5 +1,8 @@
+parameters:
+    okvpn.config.default_options: []
+
 services:
-    okvpn_okvpn_cron.middleware.lock:
+    okvpn_okvpn.middleware.lock:
         class: Okvpn\Bundle\CronBundle\Middleware\LockMiddlewareEngine
         public: false
         arguments:
@@ -7,13 +10,19 @@ services:
         tags:
             - { name: okvpn_cron.middleware, priority: -15 }
 
-    okvpn_okvpn_cron.middleware.cron_expression:
+    okvpn_cron.middleware.async:
+        class: Okvpn\Bundle\CronBundle\Middleware\AsyncProcessEngine
+        arguments: [~]
+        tags:
+            - { name: okvpn_cron.middleware, priority: -5 }
+
+    okvpn_cron.middleware.cron_expression:
         class: Okvpn\Bundle\CronBundle\Middleware\CronMiddlewareEngine
         public: false
         tags:
             - { name: okvpn_cron.middleware, priority: 20 }
 
-    okvpn_okvpn_cron.middleware.execute_service:
+    okvpn_cron.middleware.execute_service:
         class: Okvpn\Bundle\CronBundle\Middleware\ServiceInvokeEngine
         public: false
         arguments:
@@ -21,7 +30,13 @@ services:
         tags:
             - { name: okvpn_cron.middleware, priority: -30 }
 
-    okvpn_okvpn_cron.middleware.execute_commands:
+    okvpn_cron.middleware.shell:
+        class: Okvpn\Bundle\CronBundle\Middleware\ShellInvokeEngine
+        public: false
+        tags:
+            - { name: okvpn_cron.middleware, priority: -50 }
+
+    okvpn_cron.middleware.execute_commands:
         class: Okvpn\Bundle\CronBundle\Middleware\CommandRunnerEngine
         public: false
         arguments:

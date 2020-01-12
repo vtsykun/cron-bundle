@@ -9,7 +9,9 @@ use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
 interface ScheduleLoaderInterface
 {
     /**
+     * @param array $options. Any options, like group.
+     *
      * @return iterable|ScheduleEnvelope[]
      */
-    public function getSchedules(): iterable;
+    public function getSchedules(array $options = []): iterable;
 }

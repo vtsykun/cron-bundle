@@ -53,13 +53,15 @@ final class ScheduleEnvelope
     }
 
     /**
-     * @param string $stampFqcn
+     * @param mixed $stampsFqcn
      * @return $this
      */
-    public function without(string $stampFqcn): self
+    public function without(string ...$stampsFqcn): self
     {
         $cloned = clone $this;
-        unset($cloned->stamps[$stampFqcn]);
+        foreach ($stampsFqcn as $stampFqcn) {
+            unset($cloned->stamps[$stampFqcn]);
+        }
 
         return $cloned;
     }
