@@ -35,7 +35,7 @@ final class AsyncProcessEngine implements MiddlewareEngineInterface
 
             // create command string
             $runCommand = sprintf(
-                '%s %s %s%s',
+                '%s %s %s %s',
                 $phpPath,
                 $_SERVER['argv'][0],
                 CronExecuteCommand::$defaultName,

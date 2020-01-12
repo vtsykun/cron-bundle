@@ -40,7 +40,7 @@ class CronExecuteCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $fileContent = file_get_contents($input->getOption('filename'));
+        $fileContent = file_get_contents($input->getArgument('filename'));
         $envelope = unserialize($fileContent);
 
         try {
