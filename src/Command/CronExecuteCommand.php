@@ -46,7 +46,7 @@ class CronExecuteCommand extends Command
         try {
             $this->scheduleRunner->execute($envelope);
         } finally {
-            @unlink($input->getOption('filename'));
+            @unlink($input->getArgument('filename'));
         }
     }
 }
