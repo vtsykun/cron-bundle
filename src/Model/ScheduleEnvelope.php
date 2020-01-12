@@ -1,0 +1,84 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Okvpn\Bundle\CronBundle\Model;
+
+/**
+ * A wrapped to run the commands.
+ */
+final class ScheduleEnvelope
+{
+    private $command;
+    private $stamps;
+
+    public function __construct(string $command, CommandStamp ...$stamps)
+    {
+        $this->command = $command;
+
+        foreach ($stamps as $stamp) {
+            $stampRefl = new \ReflectionObject($stamp);
+            while ($stampRefl) {
+                $this->stamps[$stampRefl->getName()] = $stamp;
+                $stampRefl = $stampRefl->getParentClass();
+            }
+        }
+    }
+
+    /**
+     * @return string
+     */
+    public function getCommand(): string
+    {
+        return $this->command;
+    }
+
+    /**
+     * @param CommandStamp ...$stamps
+     * @return $this
+     */
+    public function with(CommandStamp ...$stamps): self
+    {
+        $cloned = clone $this;
+
+        foreach ($stamps as $stamp) {
+            $stampRefl = new \ReflectionObject($stamp);
+            while ($stampRefl) {
+                $this->stamps[$stampRefl->getName()] = $stamp;
+                $stampRefl = $stampRefl->getParentClass();
+            }
+        }
+
+        return $cloned;
+    }
+
+    /**
+     * @param string $stampFqcn
+     * @return $this
+     */
+    public function without(string $stampFqcn): self
+    {
+        $cloned = clone $this;
+        unset($cloned->stamps[$stampFqcn]);
+
+        return $cloned;
+    }
+
+    /**
+     * @param string $stampFqcn
+     * @return CommandStamp|null
+     */
+    public function get(string $stampFqcn): ?CommandStamp
+    {
+        return $this->stamps[$stampFqcn] ?? null;
+    }
+
+    /**
+     * @param string $stampFqcn
+     * @return bool
+     */
+    public function has(string $stampFqcn): bool
+    {
+        return isset($this->stamps[$stampFqcn]);
+    }
+}

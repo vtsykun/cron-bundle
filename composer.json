@@ -1,0 +1,40 @@
+{
+    "name": "okvpn/cron-bundle",
+    "description": "Symfony Cron Bundle for registering and execute scheduled tasks",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "homepage": "https://github.com/vtsykun/cron-bundle",
+    "support": {
+        "email": "tsykun314@gmail.com",
+        "issues": "https://github.com/vtsykun/cron-bundle/issues",
+        "source": "https://github.com/vtsykun/cron-bundle/releases"
+    },
+    "keywords": [
+        "cron-bundle",
+        "symfony-cron",
+        "cron",
+        "symfony",
+        "bundle"
+    ],
+    "authors": [
+        {
+            "name": "Uladzimir Tsykun",
+            "email": "tsykun314@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^7.2.5",
+        "symfony/framework-bundle": "^3.4|^4.2|^5.0",
+        "mtdowling/cron-expression": "^1.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Okvpn\\Bundle\\CronBundle\\": "src/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0-dev"
+        }
+    }
+}

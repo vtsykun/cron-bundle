@@ -1,0 +1,62 @@
+services:
+    okvpn_okvpn_cron.middleware.lock:
+        class: Okvpn\Bundle\CronBundle\Middleware\LockMiddlewareEngine
+        public: false
+        arguments:
+            - '@?lock.factory'
+        tags:
+            - { name: okvpn_cron.middleware, priority: -15 }
+
+    okvpn_okvpn_cron.middleware.cron_expression:
+        class: Okvpn\Bundle\CronBundle\Middleware\CronMiddlewareEngine
+        public: false
+        tags:
+            - { name: okvpn_cron.middleware, priority: 20 }
+
+    okvpn_okvpn_cron.middleware.execute_service:
+        class: Okvpn\Bundle\CronBundle\Middleware\ServiceInvokeEngine
+        public: false
+        arguments:
+            - '@okvpn_cron.commands_locator'
+        tags:
+            - { name: okvpn_cron.middleware, priority: -30 }
+
+    okvpn_okvpn_cron.middleware.execute_commands:
+        class: Okvpn\Bundle\CronBundle\Middleware\CommandRunnerEngine
+        public: false
+        arguments:
+            - '@okvpn_cron.commands_locator'
+        tags:
+            - { name: okvpn_cron.middleware, priority: -20 }
+
+    okvpn_cron.commands_locator:
+        class: Symfony\Component\DependencyInjection\ServiceLocator
+        public: false
+        arguments:
+            - []
+        tags:
+            - { name: container.service_locator }
+
+    okvpn_cron.schedule_factory:
+        class: Okvpn\Bundle\CronBundle\Loader\ScheduleFactory
+        arguments:
+            - []
+
+    okvpn_cron.array_loader:
+        class: Okvpn\Bundle\CronBundle\Loader\ArrayScheduleLoader
+        public: false
+        arguments:
+            - ~
+            - '@okvpn_cron.schedule_factory'
+        tags:
+            - { name: okvpn_cron.loader }
+
+    okvpn_cron.loader_default:
+        class: Okvpn\Bundle\CronBundle\Loader\ScheduleLoader
+        arguments:
+            - !tagged okvpn_cron.loader
+
+    okvpn_cron.runner_default:
+        class: Okvpn\Bundle\CronBundle\Runner\ScheduleRunner
+        arguments:
+            - !tagged okvpn_cron.middleware
