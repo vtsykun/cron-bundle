@@ -40,7 +40,13 @@ final class CronPass implements CompilerPassInterface
         }
 
         $prevTasks = $container->getDefinition('okvpn_cron.array_loader')
-            ->getArgument(0);
+            ->getArgument(0) ?: [];
+        foreach ($prevTasks as &$task) {
+            if ($container->hasDefinition($task['command'])) {
+                unset($task['shell']);
+                $commands[] = new Reference($task['command']);
+            }
+        }
 
         $defaultOptions = $container->getParameter('okvpn.config.default_options') ?: [];
         $tasks = \array_merge($tasks, $prevTasks ?: []);

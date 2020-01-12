@@ -2,6 +2,8 @@
 
 This bundle provides interfaces for registering scheduled tasks within your Symfony application.
 
+[![Latest Stable Version](https://poser.okvpn.org/okvpn/cron-bundle/v/stable)](https://packagist.org/packages/okvpn/cron-bundle) [![Total Downloads](https://poser.okvpn.org/okvpn/cron-bundle/downloads)](https://packagist.org/packages/okvpn/cron-bundle) [![Latest Unstable Version](https://poser.okvpn.org/okvpn/cron-bundle/v/unstable)](https://packagist.org/packages/okvpn/cron-bundle) [![License](https://poser.okvpn.org/okvpn/cron-bundle/license)](https://packagist.org/packages/okvpn/cron-bundle)
+
 ### Purpose
 This is a more simpler alternative of existing cron bundle without doctrine deps.
 Here also added support middleware for customization handling cron jobs across a cluster install: 
