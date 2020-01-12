@@ -16,6 +16,8 @@ class CronCommand extends Command
     private $scheduleRunner;
     private $loader;
 
+    protected static $defaultName = 'okvpn:cron';
+
     /**
      * @param ScheduleRunnerInterface $scheduleRunner
      * @param ScheduleLoaderInterface $loader
@@ -34,11 +36,11 @@ class CronCommand extends Command
     protected function configure(): void
     {
         $this->setName('okvpn:cron')
-            ->addOption('with', null, InputOption::VALUE_IS_ARRAY, 'StampFqcn to add command stamp to all schedules')
-            ->addOption('without', null, InputOption::VALUE_IS_ARRAY, 'StampFqcn to remove command stamp from all schedules.')
+            ->addOption('with', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'StampFqcn to add command stamp to all schedules')
+            ->addOption('without', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'StampFqcn to remove command stamp from all schedules.')
             ->addOption('command', null, InputOption::VALUE_OPTIONAL, 'Run only selected command')
             ->addOption('demand', null, InputOption::VALUE_NONE, 'Start cron scheduler every one minute without exit')
-            ->addOption('group', null, InputOption::VALUE_IS_ARRAY, 'Run schedules for specific groups.')
+            ->addOption('group', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'Run schedules for specific groups.')
             ->setDescription('Runs currently schedule cron');
     }
 

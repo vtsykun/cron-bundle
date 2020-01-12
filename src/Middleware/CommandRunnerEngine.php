@@ -30,7 +30,7 @@ final class CommandRunnerEngine implements MiddlewareEngineInterface
             return $stack->next()->handle($envelope, $stack);
         }
 
-        $handler = $envelope->get($envelope->getCommand());
+        $handler = $this->container->get($envelope->getCommand());
         if ($handler instanceof Command) {
             $commandArguments = $envelope->get(ArgumentsStamp::class) ?
                 $envelope->get(ArgumentsStamp::class)->getArguments() : [];
