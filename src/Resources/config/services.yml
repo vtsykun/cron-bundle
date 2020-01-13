@@ -32,6 +32,7 @@ services:
 
     okvpn_cron.middleware.console_command:
         class: Okvpn\Bundle\CronBundle\Middleware\ConsoleCommandEngine
+        arguments: ['@?kernel']
         public: false
         tags:
             - { name: okvpn_cron.middleware, priority: -40 }
