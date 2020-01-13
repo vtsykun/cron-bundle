@@ -147,8 +147,13 @@ okvpn_cron:
       command: "bash /root/renew.sh > /root/renew.txt" # Shell command 
       cron: "0 0 * * *"
     memorygc:
-      command: "App\Cron\MemoryGC" # Your service name
+      command: 'App\Cron\MyCronCommand' # Your service name
       cron: "0 0 * * *"
+    amazom_orders:
+      command: 'app:cron:sync-amazon-orders' # Your symfony console command name
+      cron: "*/30 * * * *"
+      async: true
+      arguments: { transport: 15 } # command arguments
 ```
 
 ## Configuration options.
@@ -165,10 +170,63 @@ okvpn_cron:
         lock: true # Default false 
 ```
 
-## Custom Scheduled Tasks Loaders
+## Your own Scheduled Tasks Loaders
 
-//TODO: Add description.
+You can create custom tasks loaders, see example
+
 ```php
+<?php declare(strict_types=1);
+
+namespace Packagist\WebBundle;
+
+use Okvpn\Bundle\CronBundle\Loader\ScheduleLoaderInterface;
+use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
+use Okvpn\Bundle\CronBundle\Model;
+
+class DoctrineCronLoader implements ScheduleLoaderInterface
+{
+    /**
+     * @inheritDoc
+     */
+    public function getSchedules(array $options = []): iterable
+    {
+        // ... get active cron from database/etc.
+
+        yield new ScheduleEnvelope(
+            'yor_service_command_name', // A service name, (object must be have a __invoke method)
+            // !!! Important. You must mark this service with tag `okvpn.cron_service` to add into our service locator.
+            new Model\ScheduleStamp('*/5 * * * *'), // Cron expression
+            new Model\LockStamp('yor_service_command_name'), // If you want to use locking
+            new Model\AsyncStamp() // If you want to run asynchronously
+        );
+
+        yield new ScheduleEnvelope(
+            'app:cron:sync-amazon-orders', // Symfony console
+            new Model\ScheduleStamp('*/5 * * * *'), // Cron expression
+            new Model\LockStamp('sync-amazon-orders -1'), // If you want to use locking
+            new Model\ArgumentsStamp(['integration' => 1]), // Command arguments
+            new Model\AsyncStamp() // If you want to run asynchronously
+        );
+
+        yield new ScheduleEnvelope(
+            'ls -l', // shell command
+            new Model\ScheduleStamp('*/10 * * * *'),  // Cron expression
+            new Model\ShellStamp(), // Run command as shell
+            new Model\TimeoutStamp(300) // Shell execution timeout
+        );
+
+        // ...
+    }
+}
+
+```
+
+And register your loader.
+
+```yaml
+services:
+    Packagist\WebBundle\DoctrineCronLoader:
+        tags: [okvpn_cron.loader]
 
 ```
 
