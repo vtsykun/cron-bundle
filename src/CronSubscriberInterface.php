@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Okvpn\Bundle\CronBundle;
 
-interface CronSubscriberInterface
+/**
+ * Only for simplify DI.
+ *
+ * Used for autoconfigure, not required for implementation
+ */
+interface CronSubscriberInterface extends CronServiceInterface
 {
     /**
      * Returns a valid cron expression, like * /10 * * * *
@@ -12,12 +17,4 @@ interface CronSubscriberInterface
      * @return string
      */
     public static function getCronExpression(): string;
-
-    /**
-     * Custom logic to process your job
-     *
-     * @param array $arguments
-     * @return mixed
-     */
-    public function __invoke(array $arguments = []);
 }

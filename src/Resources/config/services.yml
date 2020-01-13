@@ -30,6 +30,12 @@ services:
         tags:
             - { name: okvpn_cron.middleware, priority: -30 }
 
+    okvpn_cron.middleware.console_command:
+        class: Okvpn\Bundle\CronBundle\Middleware\ConsoleCommandEngine
+        public: false
+        tags:
+            - { name: okvpn_cron.middleware, priority: -40 }
+
     okvpn_cron.middleware.shell:
         class: Okvpn\Bundle\CronBundle\Middleware\ShellInvokeEngine
         public: false

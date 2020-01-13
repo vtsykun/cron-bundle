@@ -20,7 +20,7 @@ final class CronPass implements CompilerPassInterface
         $commands = $tasks = [];
         $tagged = $container->findTaggedServiceIds('okvpn.cron');
         foreach ($tagged as $id => $configs) {
-            $commands[] = new Reference($id);
+            $commands[] = $id;
             $class = $container->getDefinition($id)->getClass();
             $expression = null;
             if (\is_subclass_of($class, CronSubscriberInterface::class)) {
@@ -44,9 +44,14 @@ final class CronPass implements CompilerPassInterface
         foreach ($prevTasks as &$task) {
             if ($container->hasDefinition($task['command'])) {
                 unset($task['shell']);
-                $commands[] = new Reference($task['command']);
+                $commands[] = $task['command'];
             }
         }
+        foreach ($container->findTaggedServiceIds('okvpn.cron_service') as $id => $configs) {
+            $commands[] = $id;
+        }
+
+        $commands = array_map(function ($serviceId) { return new Reference($serviceId); }, array_unique($commands));
 
         $defaultOptions = $container->getParameter('okvpn.config.default_options') ?: [];
         $tasks = \array_merge($tasks, $prevTasks ?: []);

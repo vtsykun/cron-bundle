@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Okvpn\Bundle\CronBundle\DependencyInjection;
 
+use Okvpn\Bundle\CronBundle\CronServiceInterface;
 use Okvpn\Bundle\CronBundle\CronSubscriberInterface;
 use Okvpn\Bundle\CronBundle\Loader\ScheduleLoaderInterface;
 use Okvpn\Bundle\CronBundle\Middleware\MiddlewareEngineInterface;
@@ -52,5 +53,7 @@ final class OkvpnCronExtension extends Extension
             ->addTag('okvpn_cron.loader');
         $container->registerForAutoconfiguration(CronSubscriberInterface::class)
             ->addTag('okvpn.cron');
+        $container->registerForAutoconfiguration(CronServiceInterface::class)
+            ->addTag('okvpn.cron_service');
     }
 }
