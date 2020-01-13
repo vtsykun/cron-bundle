@@ -1,22 +1,33 @@
 # Okvpn - Cron Bundle
 
-This bundle provides interfaces for registering scheduled tasks within your Symfony application.
+This bundle provides interfaces for registering and handle scheduled tasks within your Symfony application.
 
 [![Latest Stable Version](https://poser.okvpn.org/okvpn/cron-bundle/v/stable)](https://packagist.org/packages/okvpn/cron-bundle) [![Total Downloads](https://poser.okvpn.org/okvpn/cron-bundle/downloads)](https://packagist.org/packages/okvpn/cron-bundle) [![Latest Unstable Version](https://poser.okvpn.org/okvpn/cron-bundle/v/unstable)](https://packagist.org/packages/okvpn/cron-bundle) [![License](https://poser.okvpn.org/okvpn/cron-bundle/license)](https://packagist.org/packages/okvpn/cron-bundle)
 
-### Purpose
+## Purpose
 This is a more simpler alternative of existing cron bundle without doctrine deps.
 Here also added support middleware for customization handling cron jobs across a cluster install: 
-(Send jobs to message queue, like Symfony Messenger; locking; etc.)
+(Send jobs to message queue, like Symfony Messenger; locking; etc.).
+This allow to limit the number of parallel running processes and prioritized it.
 
 Features
 --------
 
 - Not need doctrine/database.
+- Integration with Symfony Messenger.
 - Load a cron job from a different storage (config.yml, tagged services, commands).
 - Support many engines to run cron (in parallel process, message queue, consistently).
 - Support many types of cron handlers/command: (services, symfony commands, UNIX shell commands).
 - Middleware and customization.
+
+## Table of Contents
+
+ - [Base Usage](#usage)
+ - [Registration a new scheduled task](#registration-a-new-scheduled-task)
+ - [Configuration](#configuration-options)
+ - [Symfony Messenger Integration](#handle-cron-jobs-via-symfony-messenger)
+ - [Your own Scheduled Tasks Loader](#your-own-scheduled-tasks-loaders)
+ - [Handling cron jobs across a cluster](#handling-cron-jobs-across-a-cluster-or-custom-message-queue)
 
 Usage
 -----
@@ -61,37 +72,9 @@ user=www-data
 ## Registration a new scheduled task
 
 To add a new scheduled task you can use tag `okvpn.cron` or using `autoconfigure`
-with interface `Okvpn\Bundle\CronBundle\CronSubscriberInterface`
-also you can do it in the configuration section, see [Cron Handlers](#cron-handlers).
+with interface `Okvpn\Bundle\CronBundle\CronSubscriberInterface`.
 
-```yaml
-
-services:
-    App/Cron/GCDatabase:
-        tags:
-            - { name: okvpn.cron, cron: '5 0 */2 * *' }
-
-    App/Cron/YourService:
-        tags:
-            - { name: okvpn.cron, cron: '*/5 * * * *', lock: true, arguments: {'arg1': 5}, async: true }
-
-```
-
-where:
-
-- `cron` - *(Optional)* A cron expression, if empty, the command will run always.
-- `lock` - *(Optional)* Prevent to run the command again, if prev. command is not finished yet.
-To use it required symfony [lock component](https://symfony.com/doc/4.4/components/lock.html) 
-- `async` - *(Optional)* Run command in the new process without blocking main thread
-- `arguments` - *(Optional)* Array command of arguments. 
-- `lockName` - *(Optional)* Lock name, see symfony lock component
-- `lockTtl` - *(Optional)* Set ttl (Time To Live) for expiring locks.
-- `priority` - *(Optional)* Sorting priority.
-
-## Cron Handlers.
-
-
-#### Service Handler.
+#### Services.
 
 ```php
 <?php
@@ -122,10 +105,29 @@ services:
     App\Cron\MyCron:
         tags:
             - { name: okvpn.cron, cron: '*/5 * * * *' }
+    
+
+    App\Cron\SmsNotificationHandler:
+        tags:
+            - { name: okvpn.cron, cron: '*/5 * * * *', lock: true, async: true }
 
 ```
 
-#### Symfony console Handler
+Possible options to configure with tags are:
+
+- `cron` -  A cron expression, if empty, the command will run always.
+- `lock` -  Prevent to run the command again, if prev. command is not finished yet.
+To use it required installed symfony [lock component](https://symfony.com/doc/4.4/components/lock.html) 
+- `async` - Run command in the new process without blocking main thread.
+- `arguments` - Array of arguments, used to run symfony console commands. 
+- `lockName` - Custom lock name, used together with `lock`
+- `lockTtl` - Set Time To Live for expiring locks, used together with `lock`.
+- `priority` - Sorting priority.
+- `group` - Group name, see Cron Grouping section.
+- `messenger` - Send jobs into Messenger Bus. Default `false`
+- `messengerRouting` - Used only with Messenger integration, see [Symfony Routing Messages to a Transport](https://symfony.com/doc/current/messenger.html#routing-messages-to-a-transport) 
+
+#### Symfony console command
 
 ```yaml
 services:
@@ -135,7 +137,7 @@ services:
             - { name: okvpn.cron, cron: '*/5 * * * *' }
 ```
 
-#### Via configuration
+#### Via configuration / shell commands
 
 ```yaml
 okvpn_cron:
@@ -153,22 +155,70 @@ okvpn_cron:
       command: 'app:cron:sync-amazon-orders' # Your symfony console command name
       cron: "*/30 * * * *"
       async: true
-      arguments: { transport: 15 } # command arguments
+      arguments: { '--transport': 15 } # command arguments or options
 ```
 
 ## Configuration options.
 
-### Default options.
-
-You can add any default option to all scheduled tasks, for example to always run commands with locking and asynchronously.
-
 ```yaml
-# Your config.yml
+# Your config file
 okvpn_cron:
+    lock_factory: ~ # The Service to create lock. Default lock.factory, see Symfony Lock component.
+    messenger:
+        enable: false # Enable symfony messenger
+        
+    # Default options allow to add define default policy for all tasks, 
+    # For example to always run commands with locking and asynchronously
     default_options:
         async: true # Default false
-        lock: true # Default false 
+        lock: true # Default false
+        messenger: true # Handle all jobs with symfony messenger bus.
+
+    tasks: [] # Defined tasks via configuration 
 ```
+
+## Handle Cron Jobs via Symfony Messenger 
+
+To limit the number of parallel running processes you can handle the cron jobs in the queue using Symfony Messenger.
+
+1. Install Symfony Messenger
+2. Enable default route for cron job
+
+```yaml
+# config/packages/messenger.yaml
+framework:
+    messenger:
+        transports:
+            async: "%env(MESSENGER_TRANSPORT_DSN)%"
+            lowpriority: "%env(MESSENGER_TRANSPORT_LOW_DSN)%"
+
+        routing:
+            # async is whatever name you gave your transport above
+            'Okvpn\Bundle\CronBundle\Messenger\CronMessage':  async
+```
+
+3. Enable Messenger for cron.
+
+```yaml
+# config/packages/cron.yaml
+okvpn_cron:
+    messenger:
+        enable: true
+    
+    # Optional
+    default_options:
+        messenger: true # For handle all cron jobs with messenger
+    
+    # Optional 
+    tasks:
+        gribdownload:
+            command: 'app:noaa-gribdownload'
+            cron: '35,45 */3 * * *'
+            messenger: true # For handle specific cron job with messenger
+            messengerRouting: lowpriority # Send to lowpriority transport
+```
+
+More information how to use [messenger here](https://symfony.com/doc/current/messenger.html)
 
 ## Your own Scheduled Tasks Loaders
 
@@ -230,14 +280,14 @@ services:
 
 ```
 
-## Handling cron jobs across a cluster/message queue 
+## Handling cron jobs across a cluster or custom message queue 
 
 See example of customization 
 [one](https://github.com/vtsykun/packeton/tree/master/src/Packagist/WebBundle/Cron/WorkerMiddleware.php), 
 [two](https://github.com/vtsykun/packeton/tree/master/src/Packagist/WebBundle/Cron/CronWorker.php)
 
 License
----
+-------
 
 MIT License.
 

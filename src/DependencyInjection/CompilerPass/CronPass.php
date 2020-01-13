@@ -33,7 +33,7 @@ final class CronPass implements CompilerPassInterface
                     throw new \InvalidArgumentException(sprintf('Cron expression "%s" is not a valid for service %s', $cron, $id));
                 }
 
-                $config['cron'] = $expression;
+                $config['cron'] = $cron;
                 $config['command'] = $config['command'] ?? $id;
                 $tasks[] = $config;
             }

@@ -10,9 +10,11 @@ use Okvpn\Bundle\CronBundle\Loader\ScheduleLoaderInterface;
 use Okvpn\Bundle\CronBundle\Middleware\MiddlewareEngineInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Exception\LogicException;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\DependencyInjection\Loader;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * This is the class that loads and manages your bundle configuration.
@@ -29,6 +31,18 @@ final class OkvpnCronExtension extends Extension
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yml');
 
+        if (true === $config['messenger']['enable']) {
+            if (!\interface_exists(MessageBusInterface::class)) {
+                throw new LogicException('Messenger cron handle cannot be enabled as the Messenger component is not installed. Try running "composer require symfony/messenger".');
+            }
+
+            $loader->load('messenger.yml');
+            if (isset($config['messenger']['default_bus'])) {
+                $container->getDefinition('okvpn_cron.middleware.messenger')
+                    ->replaceArgument(0, new Reference($config['messenger']['default_bus']));
+            }
+        }
+
         $defaults = $config['default_options'] ?? [];
         $container->setParameter('okvpn.config.default_options', $defaults);
         if (isset($config['lock_factory'])) {
@@ -37,9 +51,9 @@ final class OkvpnCronExtension extends Extension
         }
 
         $tasks = [];
-        foreach (($config['tasks'] ?? []) as $config) {
-            $config['shell'] = true;
-            $tasks[] = $config;
+        foreach (($config['tasks'] ?? []) as $task) {
+            $task['shell'] = true;
+            $tasks[] = $task;
         }
 
         $container->getDefinition('okvpn_cron.array_loader')

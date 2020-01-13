@@ -1,6 +1,6 @@
 {
     "name": "okvpn/cron-bundle",
-    "description": "Symfony Cron Bundle for registering and execute scheduled tasks",
+    "description": "Symfony cron bundle for handle scheduled tasks consistently, parallel or across a cluster, like Symfony Messenger",
     "type": "symfony-bundle",
     "license": "MIT",
     "homepage": "https://github.com/vtsykun/cron-bundle",
@@ -14,7 +14,13 @@
         "symfony-cron",
         "cron",
         "symfony",
-        "bundle"
+        "bundle",
+        "messenger",
+        "symfony-messenger",
+        "cron-message-queue",
+        "cron-jobs",
+        "cron-locking",
+        "cron-messenger"
     ],
     "authors": [
         {
@@ -36,5 +42,10 @@
         "branch-alias": {
             "dev-master": "1.0-dev"
         }
+    },
+    "suggest": {
+        "symfony/process": "For using shell commands",
+        "symfony/lock": "For locking jobs",
+        "symfony/messenger": "For handle cron jobs in the message queue."
     }
 }

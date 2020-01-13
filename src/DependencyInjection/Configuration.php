@@ -18,20 +18,29 @@ final class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder()
     {
-        $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('okvpn_cron');
+        $treeBuilder = new TreeBuilder('okvpn_cron');
+        $rootNode = \method_exists($treeBuilder, 'getRootNode') ?
+            $treeBuilder->getRootNode() :
+            $treeBuilder->root('okvpn_cron');
 
         // Disable doctrine listener for classes in search bundle for MQ performance
         // this will leave the search functionality and if you need to update the index, you can do it manually
         $rootNode->children()
+            ->booleanNode('messenger')->defaultFalse()->end()
+            ->arrayNode('messenger')
+                ->children()
+                    ->booleanNode('enable')->defaultFalse()->end()
+                    ->scalarNode('default_bus')->end()
+                ->end()
+            ->end()
             ->scalarNode('lock_factory')->end()
             ->variableNode('default_options')->end()
             ->arrayNode('with_stamps')
                 ->scalarPrototype()
                     ->validate()
                     ->always(function ($value) {
-                        if (!is_string($value) || !class_exists($value)) {
-                            throw new \InvalidArgumentException(sprintf('Class do\'t exists or this value "%s" is not a valid class name', $value));
+                        if (!\is_string($value) || !\class_exists($value)) {
+                            throw new \InvalidArgumentException(sprintf('Class don\'t exists or this value "%s" is not a valid class name', $value));
                         }
                         return $value;
                     })

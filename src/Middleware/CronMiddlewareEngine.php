@@ -21,6 +21,6 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
             }
         }
 
-        return $stack->next()->handle($envelope, $stack);
+        return $stack->next()->handle($envelope->without(ScheduleStamp::class), $stack);
     }
 }

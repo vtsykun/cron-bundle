@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Okvpn\Bundle\CronBundle;
 
 /**
- * Only for simplify DI.
+ * Marker interface only for simplify DI.
  *
- * Used for autoconfigure, not required for implementation
+ * Used for autoconfigure, not required for implementation.
+ *
+ * You can use tag `okvpn.cron` instead.
  */
 interface CronSubscriberInterface extends CronServiceInterface
 {

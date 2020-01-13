@@ -44,7 +44,7 @@ final class ScheduleEnvelope
         foreach ($stamps as $stamp) {
             $stampRefl = new \ReflectionObject($stamp);
             while ($stampRefl) {
-                $this->stamps[$stampRefl->getName()] = $stamp;
+                $cloned->stamps[$stampRefl->getName()] = $stamp;
                 $stampRefl = $stampRefl->getParentClass();
             }
         }

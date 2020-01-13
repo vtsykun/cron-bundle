@@ -7,6 +7,7 @@ namespace Okvpn\Bundle\CronBundle\Loader;
 use Okvpn\Bundle\CronBundle\Model\ArgumentsStamp;
 use Okvpn\Bundle\CronBundle\Model\AsyncStamp;
 use Okvpn\Bundle\CronBundle\Model\LockStamp;
+use Okvpn\Bundle\CronBundle\Model\MessengerStamp;
 use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
 use Okvpn\Bundle\CronBundle\Model\ScheduleStamp;
 use Okvpn\Bundle\CronBundle\Model\ShellStamp;
@@ -49,6 +50,9 @@ final class ScheduleFactory implements ScheduleFactoryInterface
         }
         if (isset($config['shell']) && $config['shell']) {
             $stamps[] = new ShellStamp();
+        }
+        if (isset($config['messenger']) && $config['messenger']) {
+            $stamps[] = new MessengerStamp(isset($config['messengerRouting']) ? (array) $config['messengerRouting'] : null);
         }
 
         $withStampsFqcn = array_merge($config['options']['with'] ?? [], $this->withStampsFqcn);

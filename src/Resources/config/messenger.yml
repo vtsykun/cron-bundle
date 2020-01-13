@@ -1,0 +1,20 @@
+services:
+    Okvpn\Bundle\CronBundle\Messenger\CronMessageHandler:
+        arguments:
+            - '@okvpn_cron.runner_default'
+        tags: [messenger.message_handler]
+
+    okvpn_cron.messenger.senders_locator:
+        decorates: messenger.senders_locator
+        class: Okvpn\Bundle\CronBundle\Messenger\CronSendersLocator
+        arguments:
+            - '@okvpn_cron.messenger.senders_locator.inner'
+
+    okvpn_cron.middleware.messenger:
+        class: Okvpn\Bundle\CronBundle\Middleware\MessengerEngine
+        public: false
+        arguments:
+            - '@?Symfony\Component\Messenger\MessageBusInterface'
+        tags:
+            # Priority must be < async and > lock
+            - { name: okvpn_cron.middleware, priority: -10 }

@@ -23,7 +23,11 @@ final class LockMiddlewareEngine implements MiddlewareEngineInterface
     public function handle(ScheduleEnvelope $envelope, StackInterface $stack): ScheduleEnvelope
     {
         /** @var LockStamp $stamp */
-        if ($this->factory and $stamp = $envelope->get(LockStamp::class)) {
+        if ($stamp = $envelope->get(LockStamp::class)) {
+            if (null === $this->factory) {
+                throw new \LogicException('You need to install and configure symfony/lock to run tasks with locking.');
+            }
+
             $lock = $this->factory->createLock(
                 $stamp->lockName(),
                 $stamp->getTtl()
