@@ -230,6 +230,12 @@ services:
 
 ```
 
+## Handling cron jobs across a cluster/message queue 
+
+See example of customization 
+[one](https://github.com/vtsykun/packeton/tree/master/src/Packagist/WebBundle/Cron/WorkerMiddleware.php), 
+[two](https://github.com/vtsykun/packeton/tree/master/src/Packagist/WebBundle/Cron/CronWorker.php)
+
 License
 ---
 
