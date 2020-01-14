@@ -64,5 +64,15 @@ final class CronPass implements CompilerPassInterface
             ->replaceArgument(0, $tasks);
         $container->getDefinition('okvpn_cron.commands_locator')
             ->replaceArgument(0, $commands);
+
+        if (
+            $container->hasDefinition('okvpn_cron.messenger.senders_locator') &&
+            $container->hasDefinition('messenger.senders_locator')
+        ) {
+            $sendersServiceLocator = $container->getDefinition('messenger.senders_locator')
+                ->getArgument(1);
+            $container->getDefinition('okvpn_cron.messenger.senders_locator')
+                ->replaceArgument(1, $sendersServiceLocator);
+        }
     }
 }

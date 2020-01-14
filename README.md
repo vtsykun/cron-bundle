@@ -290,4 +290,3 @@ License
 -------
 
 MIT License.
-

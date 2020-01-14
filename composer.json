@@ -30,7 +30,7 @@
     ],
     "require": {
         "php": "^7.2.5",
-        "symfony/framework-bundle": "^3.4|^4.2|^5.0",
+        "symfony/framework-bundle": "^3.4|^4.3|^5.0",
         "mtdowling/cron-expression": "^1.1"
     },
     "autoload": {

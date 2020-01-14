@@ -32,7 +32,8 @@ class CronExecuteCommand extends Command
     protected function configure(): void
     {
         $this->addArgument('filename', InputArgument::REQUIRED, 'PHP serialized cron job')
-            ->setDescription('INTERNAL!!!. Execute cron command from file.');
+            ->setDescription('INTERNAL!!!. Execute cron command from file.')
+            ->setHidden(true);
     }
 
     /**

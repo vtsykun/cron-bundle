@@ -9,6 +9,7 @@ services:
         class: Okvpn\Bundle\CronBundle\Messenger\CronSendersLocator
         arguments:
             - '@okvpn_cron.messenger.senders_locator.inner'
+            - ~
 
     okvpn_cron.middleware.messenger:
         class: Okvpn\Bundle\CronBundle\Middleware\MessengerEngine

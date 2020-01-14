@@ -51,7 +51,7 @@ final class ScheduleFactory implements ScheduleFactoryInterface
         if (isset($config['shell']) && $config['shell']) {
             $stamps[] = new ShellStamp();
         }
-        if (isset($config['messenger']) && $config['messenger']) {
+        if ((isset($config['messenger']) && $config['messenger']) || isset($config['messengerRouting'])) {
             $stamps[] = new MessengerStamp(isset($config['messengerRouting']) ? (array) $config['messengerRouting'] : null);
         }
 

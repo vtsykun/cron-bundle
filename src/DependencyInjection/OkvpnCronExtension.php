@@ -31,7 +31,7 @@ final class OkvpnCronExtension extends Extension
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yml');
 
-        if (true === $config['messenger']['enable']) {
+        if (true === ($config['messenger']['enable'] ?? false)) {
             if (!\interface_exists(MessageBusInterface::class)) {
                 throw new LogicException('Messenger cron handle cannot be enabled as the Messenger component is not installed. Try running "composer require symfony/messenger".');
             }
