@@ -26,6 +26,7 @@ final class Configuration implements ConfigurationInterface
         // Disable doctrine listener for classes in search bundle for MQ performance
         // this will leave the search functionality and if you need to update the index, you can do it manually
         $rootNode->children()
+            ->scalarNode('timezone')->end()
             ->arrayNode('messenger')
                 ->children()
                     ->booleanNode('enable')->defaultFalse()->end()
@@ -33,7 +34,7 @@ final class Configuration implements ConfigurationInterface
                 ->end()
             ->end()
             ->scalarNode('lock_factory')->end()
-            ->variableNode('default_options')->end()
+            ->variableNode('default_policy')->end()
             ->arrayNode('with_stamps')
                 ->scalarPrototype()
                     ->validate()
@@ -47,7 +48,6 @@ final class Configuration implements ConfigurationInterface
                 ->end()
             ->end()
             ->arrayNode('tasks')
-                ->useAttributeAsKey('name')
                 ->arrayPrototype()
                 ->ignoreExtraKeys(false)
                     ->children()
@@ -62,6 +62,7 @@ final class Configuration implements ConfigurationInterface
                             })
                             ->end()
                         ->end()
+                        ->integerNode('timeout')->end()
                     ->end()
                 ->end()
             ->end();

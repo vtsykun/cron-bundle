@@ -9,10 +9,12 @@ class LockStamp implements CommandStamp
     private $lockName;
     private $ttl;
 
-    public function __construct(string $lockName, int $ttl = null)
+    public function __construct($lock = null)
     {
-        $this->lockName = $lockName;
-        $this->ttl = $ttl;
+        $this->lockName = isset($lock['name']) ? (string) $lock['name'] :
+            (is_string($lock) ? $lock : md5(serialize($lock)));
+
+        $this->ttl = isset($lock['ttl']) ? (int)$lock['ttl'] : null;
     }
 
     /**

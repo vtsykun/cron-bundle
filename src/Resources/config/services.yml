@@ -1,5 +1,5 @@
 parameters:
-    okvpn.config.default_options: []
+    okvpn.config.default_policy: []
 
 services:
     okvpn_okvpn.middleware.lock:
@@ -61,8 +61,7 @@ services:
 
     okvpn_cron.schedule_factory:
         class: Okvpn\Bundle\CronBundle\Loader\ScheduleFactory
-        arguments:
-            - []
+        arguments: [[], []]
 
     okvpn_cron.array_loader:
         class: Okvpn\Bundle\CronBundle\Loader\ArrayScheduleLoader

@@ -24,7 +24,7 @@ Features
 
  - [Base Usage](#usage)
  - [Registration a new scheduled task](#registration-a-new-scheduled-task)
- - [Configuration](#configuration-options)
+ - [Configuration](#full-configuration-reference)
  - [Symfony Messenger Integration](#handle-cron-jobs-via-symfony-messenger)
  - [Your own Scheduled Tasks Loader](#your-own-scheduled-tasks-loaders)
  - [Handling cron jobs across a cluster](#handling-cron-jobs-across-a-cluster-or-custom-message-queue)
@@ -116,22 +116,20 @@ services:
 Possible options to configure with tags are:
 
 - `cron` -  A cron expression, if empty, the command will run always.
-- `lock` -  Prevent to run the command again, if prev. command is not finished yet.
-To use it required installed symfony [lock component](https://symfony.com/doc/4.4/components/lock.html) 
+- `lock` -  Prevent to run the command again, if prev. command is not finished yet. Example: `lock:  true`, `lock:  {name: lock1, ttl: 300}`.
+To use this option need to install symfony [lock component](https://symfony.com/doc/4.4/components/lock.html) 
 - `async` - Run command in the new process without blocking main thread.
-- `arguments` - Array of arguments, used to run symfony console commands. 
-- `lockName` - Custom lock name, used together with `lock`
-- `lockTtl` - Set Time To Live for expiring locks, used together with `lock`.
+- `arguments` - Array of arguments, used to run symfony console commands or pass arguments to handler. 
 - `priority` - Sorting priority.
 - `group` - Group name, see Cron Grouping section.
-- `messenger` - Send jobs into Messenger Bus. Default `false`
-- `messengerRouting` - Used only with Messenger integration, see [Symfony Routing Messages to a Transport](https://symfony.com/doc/current/messenger.html#routing-messages-to-a-transport) 
+- `messenger` - Send jobs into Messenger Bus. Default `false`. You also can specify transport here `messenger: {routing: async}`,
+see [Symfony Routing Messages to a Transport](https://symfony.com/doc/current/messenger.html#routing-messages-to-a-transport) 
 
 #### Symfony console command
 
 ```yaml
 services:
-    App\Command\CronCommand:
+    App\Command\DowloadOrdersCommand:
         tags:
             - { name: console.command }
             - { name: okvpn.cron, cron: '*/5 * * * *' }
@@ -142,39 +140,62 @@ services:
 ```yaml
 okvpn_cron:
   tasks:
-    clearcache:
+    -
       command: "php %kernel_project.dir%/bin/console cache:clear --env=prod" # Shell command 
       cron: "0 0 * * *"
-    letsenecrypt:
-      command: "bash /root/renew.sh > /root/renew.txt" # Shell command 
+    -
+      command: "bash /root/renew.sh > /root/renew.txt" # Shell command
+      group: root # Filtering by group. You can run `bin/console okvpn:cron --group=root` under the root user 
       cron: "0 0 * * *"
-    memorygc:
-      command: 'App\Cron\MyCronCommand' # Your service name
+    -
+      command: 'App\Cron\YouServiceName' # Your service name
       cron: "0 0 * * *"
-    amazom_orders:
+    -
       command: 'app:cron:sync-amazon-orders' # Your symfony console command name
       cron: "*/30 * * * *"
       async: true
       arguments: { '--transport': 15 } # command arguments or options
 ```
 
-## Configuration options.
+## Full Configuration Reference
 
 ```yaml
 # Your config file
 okvpn_cron:
     lock_factory: ~ # The Service to create lock. Default lock.factory, see Symfony Lock component.
+    timezone: ~ # default timezone, like Europe/Minsk. if null will use php.ini default
     messenger:
         enable: false # Enable symfony messenger
         
     # Default options allow to add define default policy for all tasks, 
     # For example to always run commands with locking and asynchronously
-    default_options:
+    default_policy:
         async: true # Default false
         lock: true # Default false
         messenger: true # Handle all jobs with symfony messenger bus.
+    
+    # Stamps it's markers that will add to each tasks. Used by Middleware's, see customization example 
+    with_stamps:
+        - 'Packagist\WebBundle\Cron\WorkerStamp'
 
-    tasks: [] # Defined tasks via configuration 
+    # You can add other custom options for tasks and create your own middleware.
+    tasks: # Defined tasks via configuration
+      - 
+        command: 'app:cron:sync-amazon-orders' # Your symfony console command name
+        cron: "*/30 * * * *"
+        async: true
+        lock: true
+        arguments: { '--transport': 15 }
+        # Here you can add other custom options for tasks and create your own middleware.
+      -
+        command: 'App\Cron\YouServiceName' # Your service name
+        cron: "0 0 * * *"
+        messenger: { routing: lowpriority } # See Messenger configuration
+
+      -
+        command: "bash /root/renew.sh > /root/renew.txt" # Shell command
+        group: root # Group filter. You can run `bin/console okvpn:cron --group=root` under the root user 
+        cron: "0 0 * * *"
 ```
 
 ## Handle Cron Jobs via Symfony Messenger 
@@ -202,20 +223,21 @@ framework:
 ```yaml
 # config/packages/cron.yaml
 okvpn_cron:
+    # Required. messenger middleware is disable
     messenger:
         enable: true
-    
+
     # Optional
     default_options:
         messenger: true # For handle all cron jobs with messenger
     
     # Optional 
     tasks:
-        gribdownload:
-            command: 'app:noaa-gribdownload'
-            cron: '35,45 */3 * * *'
-            messenger: true # For handle specific cron job with messenger
-            messengerRouting: lowpriority # Send to lowpriority transport
+        - 
+            command: 'app:noaa:gfs-grib-download'
+            cron: '34,45 */6 * * *'
+#           messenger: true # OR
+            messenger: { routing: lowpriority } # Send to lowpriority transport
 ```
 
 More information how to use [messenger here](https://symfony.com/doc/current/messenger.html)
@@ -253,16 +275,15 @@ class DoctrineCronLoader implements ScheduleLoaderInterface
         yield new ScheduleEnvelope(
             'app:cron:sync-amazon-orders', // Symfony console
             new Model\ScheduleStamp('*/5 * * * *'), // Cron expression
-            new Model\LockStamp('sync-amazon-orders -1'), // If you want to use locking
-            new Model\ArgumentsStamp(['integration' => 1]), // Command arguments
+            new Model\LockStamp('sync-amazon-orders_1'), // If you want to use locking
+            new Model\ArgumentsStamp(['--integration' => 1]), // Command arguments
             new Model\AsyncStamp() // If you want to run asynchronously
         );
 
         yield new ScheduleEnvelope(
             'ls -l', // shell command
             new Model\ScheduleStamp('*/10 * * * *'),  // Cron expression
-            new Model\ShellStamp(), // Run command as shell
-            new Model\TimeoutStamp(300) // Shell execution timeout
+            new Model\ShellStamp(['timeout'=> 300]), // Run command as shell
         );
 
         // ...

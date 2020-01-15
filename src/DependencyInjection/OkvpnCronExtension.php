@@ -8,6 +8,7 @@ use Okvpn\Bundle\CronBundle\CronServiceInterface;
 use Okvpn\Bundle\CronBundle\CronSubscriberInterface;
 use Okvpn\Bundle\CronBundle\Loader\ScheduleLoaderInterface;
 use Okvpn\Bundle\CronBundle\Middleware\MiddlewareEngineInterface;
+use Okvpn\Bundle\CronBundle\Model;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Exception\LogicException;
@@ -43,8 +44,7 @@ final class OkvpnCronExtension extends Extension
             }
         }
 
-        $defaults = $config['default_options'] ?? [];
-        $container->setParameter('okvpn.config.default_options', $defaults);
+        $container->setParameter('okvpn.config.default_policy', $config['default_policy'] ?? []);
         if (isset($config['lock_factory'])) {
             $container->getDefinition('okvpn_okvpn_cron.middleware.lock')
                 ->replaceArgument(0, new Reference($config['lock_factory']));
@@ -52,14 +52,24 @@ final class OkvpnCronExtension extends Extension
 
         $tasks = [];
         foreach (($config['tasks'] ?? []) as $task) {
-            $task['shell'] = true;
+            $task['shell'] = $task['shell'] ?? true;
             $tasks[] = $task;
         }
+
+        $defaultStamps = [
+            'shell' => Model\ShellStamp::class,
+            'lock' => Model\LockStamp::class,
+            'messenger' => Model\MessengerStamp::class,
+            'cron' => Model\ScheduleStamp::class,
+            'async' => Model\AsyncStamp::class,
+            'arguments' => Model\ArgumentsStamp::class
+        ];
 
         $container->getDefinition('okvpn_cron.array_loader')
             ->replaceArgument(0, $tasks);
         $container->getDefinition('okvpn_cron.schedule_factory')
-            ->replaceArgument(0, $config['with_stamps'] ?? []);
+            ->replaceArgument(0, $config['with_stamps'] ?? [])
+            ->replaceArgument(1, $defaultStamps);
 
         $container->registerForAutoconfiguration(MiddlewareEngineInterface::class)
             ->addTag('okvpn_cron.middleware');

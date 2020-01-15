@@ -9,11 +9,11 @@ class MessengerStamp implements CommandStamp
     private $routing;
 
     /**
-     * @param string[]|null $routing
+     * @param mixed|null $messenger
      */
-    public function __construct(array $routing = null)
+    public function __construct($messenger = null)
     {
-        $this->routing = $routing;
+        $this->routing = isset($messenger['routing']) ? (array) $messenger['routing'] : null;
     }
 
     /**
