@@ -13,13 +13,13 @@ class MessengerStamp implements CommandStamp
      */
     public function __construct($messenger = null)
     {
-        $this->routing = isset($messenger['routing']) ? (array) $messenger['routing'] : null;
+        $this->routing = isset($messenger['routing']) ? (array) $messenger['routing'] : [];
     }
 
     /**
-     * @return array|string[]|null
+     * @return array|string[]
      */
-    public function getRouting()
+    public function getRouting(): array
     {
         return $this->routing;
     }

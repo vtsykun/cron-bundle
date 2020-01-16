@@ -6,7 +6,7 @@ namespace Okvpn\Bundle\CronBundle\Messenger;
 
 use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
 
-class CronMessage
+final class CronMessage
 {
     private $schedule;
 

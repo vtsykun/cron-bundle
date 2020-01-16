@@ -7,7 +7,6 @@ namespace Okvpn\Bundle\CronBundle\Middleware;
 use Okvpn\Bundle\CronBundle\Model\OutputStamp;
 use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
 use Okvpn\Bundle\CronBundle\Model\ShellStamp;
-use Okvpn\Bundle\CronBundle\Model\TimeoutStamp;
 use Symfony\Component\Process\Process;
 
 final class ShellInvokeEngine implements MiddlewareEngineInterface
@@ -17,7 +16,7 @@ final class ShellInvokeEngine implements MiddlewareEngineInterface
      */
     public function handle(ScheduleEnvelope $envelope, StackInterface $stack): ScheduleEnvelope
     {
-        if (false === $envelope->has(ShellStamp::class)) {
+        if (!$stamp = $envelope->get(ShellStamp::class)) {
             return $stack->next()->handle($envelope, $stack);
         }
 
@@ -33,16 +32,16 @@ final class ShellInvokeEngine implements MiddlewareEngineInterface
             $process = new Process($command);
         }
 
-        if ($stamp = $envelope->get(TimeoutStamp::class)) {
-            $process->setTimeout($stamp->getTimeout());
+        if (null !== $timeout = $stamp->getTimeout()) {
+            $process->setTimeout($timeout);
         }
 
         $output = null;
         try {
             $process->run();
-            $output = $process->getErrorOutput() . "\n" . $process->getOutput();
+            $output = $process->getErrorOutput() . $process->getOutput();
         } catch (\Exception $exception) {
-            $output = $exception->getMessage() . "\n" . $process->getErrorOutput() . "\n" . $process->getOutput();
+            $output = $exception->getMessage() . $process->getErrorOutput() . $process->getOutput();
         }
 
         return $stack->end()->handle($envelope->with(new OutputStamp($output)), $stack);

@@ -178,20 +178,14 @@ okvpn_cron:
     with_stamps:
         - 'Packagist\WebBundle\Cron\WorkerStamp'
 
-    # You can add other custom options for tasks and create your own middleware.
     tasks: # Defined tasks via configuration
       - 
-        command: 'app:cron:sync-amazon-orders' # Your symfony console command name
-        cron: "*/30 * * * *"
-        async: true
-        lock: true
-        arguments: { '--transport': 15 }
-        # Here you can add other custom options for tasks and create your own middleware.
-      -
-        command: 'App\Cron\YouServiceName' # Your service name
-        cron: "0 0 * * *"
+        command: 'app:noaa:gfs-grib-download'
+        cron: '34,45 */6 * * *'
         messenger: { routing: lowpriority } # See Messenger configuration
-
+        lock: true
+        arguments: { '--transport': '0p25' }
+        # Here you can also add other custom options and create your own middleware.
       -
         command: "bash /root/renew.sh > /root/renew.txt" # Shell command
         group: root # Group filter. You can run `bin/console okvpn:cron --group=root` under the root user 

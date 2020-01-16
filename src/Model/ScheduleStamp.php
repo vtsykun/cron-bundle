@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Okvpn\Bundle\CronBundle\Model;
 
-use Cron\CronExpression;
-
 class ScheduleStamp implements CommandStamp
 {
     private $cronExpression;
@@ -18,8 +16,8 @@ class ScheduleStamp implements CommandStamp
         $this->cronExpression = $cronExpression;
     }
 
-    public function cronExpression(): CronExpression
+    public function cronExpression(): string
     {
-        return  CronExpression::factory($this->cronExpression);
+        return $this->cronExpression;
     }
 }

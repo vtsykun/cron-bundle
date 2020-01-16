@@ -70,6 +70,8 @@ final class OkvpnCronExtension extends Extension
         $container->getDefinition('okvpn_cron.schedule_factory')
             ->replaceArgument(0, $config['with_stamps'] ?? [])
             ->replaceArgument(1, $defaultStamps);
+        $container->getDefinition('okvpn_cron.middleware.cron_expression')
+            ->replaceArgument(0, $config['timezone']);
 
         $container->registerForAutoconfiguration(MiddlewareEngineInterface::class)
             ->addTag('okvpn_cron.middleware');

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Okvpn\Bundle\CronBundle\Middleware;
 
 use Okvpn\Bundle\CronBundle\Messenger\CronMessage;
+use Okvpn\Bundle\CronBundle\Messenger\RoutingStamp;
 use Okvpn\Bundle\CronBundle\Model\MessengerStamp;
 use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -32,7 +33,9 @@ final class MessengerEngine implements MiddlewareEngineInterface
         }
 
         $message = new CronMessage($envelope);
-        $this->messageBus->dispatch($message);
+        $routing = $envelope->get(MessengerStamp::class)->getRouting();
+        $stamps = \array_map(function ($route) {return new RoutingStamp($route);}, $routing);
+        $this->messageBus->dispatch($message, $stamps);
 
         return $stack->end()->handle($envelope, $stack);
     }

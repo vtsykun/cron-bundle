@@ -14,7 +14,7 @@ class LockStamp implements CommandStamp
         $this->lockName = isset($lock['name']) ? (string) $lock['name'] :
             (is_string($lock) ? $lock : md5(serialize($lock)));
 
-        $this->ttl = isset($lock['ttl']) ? (int)$lock['ttl'] : null;
+        $this->ttl = isset($lock['ttl']) ? (int) $lock['ttl'] : null;
     }
 
     /**
