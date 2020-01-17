@@ -78,7 +78,7 @@ final class CronPass implements CompilerPassInterface
     {
         if (isset($task['lock']) && $task['lock']) {
             if (is_scalar($task['lock'])) {
-                $task['lock']['name'] = is_string($task['lock']) ? $task['lock'] : $task['command'];
+                $task['lock'] = ['name' => is_string($task['lock']) ? $task['lock'] : $task['command']];
             }
             if (!isset($task['lock']['name']) || !is_string($task['lock']['name'])) {
                 $task['lock']['name'] = $task['command'];

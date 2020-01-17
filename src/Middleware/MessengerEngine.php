@@ -32,7 +32,7 @@ final class MessengerEngine implements MiddlewareEngineInterface
             throw new \LogicException('To use messenger cron handler you need enable/install "symfony/messenger" component and configure default_bus');
         }
 
-        $message = new CronMessage($envelope);
+        $message = new CronMessage($envelope->without(MessengerStamp::class));
         $routing = $envelope->get(MessengerStamp::class)->getRouting();
         $stamps = \array_map(function ($route) {return new RoutingStamp($route);}, $routing);
         $this->messageBus->dispatch($message, $stamps);

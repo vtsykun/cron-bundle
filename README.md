@@ -116,13 +116,13 @@ services:
 Possible options to configure with tags are:
 
 - `cron` -  A cron expression, if empty, the command will run always.
-- `lock` -  Prevent to run the command again, if prev. command is not finished yet. Example: `lock:  true`, `lock:  {name: lock1, ttl: 300}`.
+- `lock` -  Prevent to run the command again, if prev. command is not finished yet. Possible value: `true`, `{name: lock1, ttl: 300}`.
 To use this option need to install symfony [lock component](https://symfony.com/doc/4.4/components/lock.html) 
 - `async` - Run command in the new process without blocking main thread.
 - `arguments` - Array of arguments, used to run symfony console commands or pass arguments to handler. 
 - `priority` - Sorting priority.
 - `group` - Group name, see Cron Grouping section.
-- `messenger` - Send jobs into Messenger Bus. Default `false`. You also can specify transport here `messenger: {routing: async}`,
+- `messenger` - Send jobs into Messenger Bus. Default `false`. You also can specify transport here `{routing: async}`,
 see [Symfony Routing Messages to a Transport](https://symfony.com/doc/current/messenger.html#routing-messages-to-a-transport) 
 
 #### Symfony console command
@@ -174,7 +174,7 @@ okvpn_cron:
         lock: true # Default false
         messenger: true # Handle all jobs with symfony messenger bus.
     
-    # Stamps it's markers that will add to each tasks. Used by Middleware's, see customization example 
+    # Stamps it's markers that will add to each tasks.
     with_stamps:
         - 'Packagist\WebBundle\Cron\WorkerStamp'
 
