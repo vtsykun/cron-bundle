@@ -41,6 +41,7 @@ class CronCommand extends Command
             ->addOption('command', null, InputOption::VALUE_OPTIONAL, 'Run only selected command')
             ->addOption('demand', null, InputOption::VALUE_NONE, 'Start cron scheduler every one minute without exit')
             ->addOption('group', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'Run schedules for specific groups.')
+            ->addOption('time-limit', null, InputOption::VALUE_OPTIONAL, 'Run cron scheduler during this time (sec.)')
             ->setDescription('Runs currently schedule cron');
     }
 
@@ -51,11 +52,14 @@ class CronCommand extends Command
     {
         if ($input->getOption('demand')) {
             $output->writeln('Run scheduler without exit');
-            while ($now = time()) {
+            $startTime = time();
+            $timeLimit = $input->getOption('time-limit');
+
+            while ($now = time() and (null === $timeLimit || $now - $startTime < $timeLimit)) {
                 sleep(60 - ($now % 60));
-                $startTime = microtime(true);
+                $runAt = microtime(true);
                 $this->scheduler($input, $output);
-                $output->writeln(sprintf('All schedule tasks completed in %.3f seconds', microtime(true) - $startTime), OutputInterface::VERBOSITY_VERBOSE);
+                $output->writeln(sprintf('All schedule tasks completed in %.3f seconds', microtime(true) - $runAt), OutputInterface::VERBOSITY_VERBOSE);
             }
         } else {
             $this->scheduler($input, $output);
