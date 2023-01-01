@@ -48,7 +48,7 @@ class CronCommand extends Command
     /**
      * {@inheritdoc}
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         if ($input->getOption('demand')) {
             $output->writeln('Run scheduler without exit');
@@ -64,6 +64,8 @@ class CronCommand extends Command
         } else {
             $this->scheduler($input, $output);
         }
+
+        return 0;
     }
 
     /**

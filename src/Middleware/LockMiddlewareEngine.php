@@ -10,9 +10,10 @@ use Symfony\Component\Lock\Factory as LockFactory;
 
 final class LockMiddlewareEngine implements MiddlewareEngineInterface
 {
+    /** @var mixed|\Symfony\Component\Lock\LockFactory */
     private $factory;
 
-    public function __construct(LockFactory $factory = null)
+    public function __construct($factory = null)
     {
         $this->factory = $factory;
     }

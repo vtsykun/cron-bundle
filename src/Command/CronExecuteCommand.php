@@ -39,7 +39,7 @@ class CronExecuteCommand extends Command
     /**
      * {@inheritDoc}
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $fileContent = file_get_contents($input->getArgument('filename'));
         $envelope = unserialize($fileContent);
@@ -49,5 +49,7 @@ class CronExecuteCommand extends Command
         } finally {
             @unlink($input->getArgument('filename'));
         }
+
+        return 0;
     }
 }
