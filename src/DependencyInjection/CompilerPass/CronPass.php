@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Okvpn\Bundle\CronBundle\DependencyInjection\CompilerPass;
 
-use Cron\CronExpression;
+use Okvpn\Bundle\CronBundle\Cron\CronChecker;
 use Okvpn\Bundle\CronBundle\CronSubscriberInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -13,7 +13,7 @@ use Symfony\Component\DependencyInjection\Reference;
 final class CronPass implements CompilerPassInterface
 {
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function process(ContainerBuilder $container)
     {
@@ -29,7 +29,7 @@ final class CronPass implements CompilerPassInterface
 
             foreach ($configs as $config) {
                 $cron = $config['cron'] ?? $expression;
-                if (null !== $cron && !CronExpression::isValidExpression($cron)) {
+                if (null !== $cron && !CronChecker::isValidExpression($cron)) {
                     throw new \InvalidArgumentException(sprintf('Cron expression "%s" is not a valid for service %s', $cron, $id));
                 }
 
