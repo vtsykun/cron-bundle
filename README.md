@@ -2,7 +2,10 @@
 
 This bundle provides interfaces for registering and handle scheduled tasks within your Symfony application.
 
-[![Latest Stable Version](https://poser.okvpn.org/okvpn/cron-bundle/v/stable)](https://packagist.org/packages/okvpn/cron-bundle) [![Total Downloads](https://poser.okvpn.org/okvpn/cron-bundle/downloads)](https://packagist.org/packages/okvpn/cron-bundle) [![Latest Unstable Version](https://poser.okvpn.org/okvpn/cron-bundle/v/unstable)](https://packagist.org/packages/okvpn/cron-bundle) [![License](https://poser.okvpn.org/okvpn/cron-bundle/license)](https://packagist.org/packages/okvpn/cron-bundle)
+[![Latest Stable Version](https://poser.okvpn.org/okvpn/cron-bundle/v/stable)](https://packagist.org/packages/okvpn/cron-bundle)
+[![Total Downloads](https://poser.okvpn.org/okvpn/cron-bundle/downloads)](https://packagist.org/packages/okvpn/cron-bundle) 
+[![Latest Unstable Version](https://poser.okvpn.org/okvpn/cron-bundle/v/unstable)](https://packagist.org/packages/okvpn/cron-bundle) 
+[![License](https://poser.okvpn.org/okvpn/cron-bundle/license)](https://packagist.org/packages/okvpn/cron-bundle)
 
 ## Purpose
 This is a more simpler alternative of existing cron bundle without doctrine deps.
@@ -16,7 +19,7 @@ Features
 - Not need doctrine/database.
 - Integration with Symfony Messenger.
 - Load a cron job from a different storage (config.yml, tagged services, commands).
-- Support many engines to run cron (in parallel process, message queue, consistently), allow to use random expression.
+- Support many engines to run cron (in parallel process, message queue, consistently), allow to use `random` expression.
 - Support many types of cron handlers/command: (services, symfony commands, UNIX shell commands).
 - Middleware and customization.
 
@@ -80,7 +83,7 @@ Examples:
 ```
 */5 * * * * - every 5 min 
 0 1 * * 0 - at 1 am every Sunday
-@randon 3600 # where 3600 - parameter lambda in poisson distribution, if it will run each seconds. Here, the avg probability period is 1 hour.
+@random 3600 # where 3600 - parameter lambda in poisson distribution, if it will run each seconds. Here, the avg probability period is 1 hour.
 ```
 
 #### First way. Install system crontab
@@ -349,8 +352,8 @@ services:
 ## Handling cron jobs across a cluster or custom message queue 
 
 See example of customization 
-[one](https://github.com/vtsykun/packeton/tree/master/src/Packagist/WebBundle/Cron/WorkerMiddleware.php), 
-[two](https://github.com/vtsykun/packeton/tree/master/src/Packagist/WebBundle/Cron/CronWorker.php)
+[one](https://github.com/vtsykun/packeton/tree/master/src/Cron/WorkerMiddleware.php), 
+[two](https://github.com/vtsykun/packeton/tree/master/src/Cron/CronWorker.php)
 
 License
 -------
