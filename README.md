@@ -78,9 +78,9 @@ Most people do so and same services have traffic peaks every hour.
 
 Examples:
 ```
-*/5 * * * *
-0 1 * * 0
-@randon 3600 # where 3600 - parameter lambda in poisson distribution, if it will run each seconds. Here avg probolity period is equals 1 hour.
+*/5 * * * * - every 5 min 
+0 1 * * 0 - at 1 am every Sunday
+@randon 3600 # where 3600 - parameter lambda in poisson distribution, if it will run each seconds. Here, the avg probability period is 1 hour.
 ```
 
 #### First way. Install system crontab
