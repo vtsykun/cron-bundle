@@ -19,6 +19,7 @@ class CronCommand extends Command
     private $loader;
 
     protected static $defaultName = 'okvpn:cron';
+    protected static $defaultDescription = 'Runs currently schedule cron';
 
     /**
      * @param ScheduleRunnerInterface $scheduleRunner
@@ -54,14 +55,14 @@ class CronCommand extends Command
     {
         if ($input->getOption('demand')) {
             $output->writeln('Run scheduler without exit');
-            $startTime = time();
+            $startTime = \time();
             $timeLimit = $input->getOption('time-limit');
 
-            while ($now = time() and (null === $timeLimit || $now - $startTime < $timeLimit)) {
-                sleep(60 - ($now % 60));
-                $runAt = microtime(true);
+            while ($now = \time() and (null === $timeLimit || $now - $startTime < $timeLimit)) {
+                \sleep(60 - ($now % 60));
+                $runAt = \microtime(true);
                 $this->scheduler($input, $output);
-                $output->writeln(sprintf('All schedule tasks completed in %.3f seconds', microtime(true) - $runAt), OutputInterface::VERBOSITY_VERBOSE);
+                $output->writeln(sprintf('All schedule tasks completed in %.3f seconds', \microtime(true) - $runAt), OutputInterface::VERBOSITY_VERBOSE);
             }
         } else {
             $this->scheduler($input, $output);
@@ -105,7 +106,7 @@ class CronCommand extends Command
 
     protected function createLoggerStamp(OutputInterface $output)
     {
-        if (class_exists(ConsoleLogger::class)) {
+        if (\class_exists(ConsoleLogger::class)) {
             return new LoggerAwareStamp(new ConsoleLogger($output));
         }
 

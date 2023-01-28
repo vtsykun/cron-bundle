@@ -6,7 +6,7 @@ namespace Okvpn\Bundle\CronBundle\Model;
 
 use Psr\Log\LoggerInterface;
 
-final class LoggerAwareStamp implements CommandStamp
+final class LoggerAwareStamp implements CommandStamp, UnserializableStamp
 {
     private $logger;
 

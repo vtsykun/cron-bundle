@@ -50,7 +50,7 @@ return [
 
 ##  Quick Usage 
 
-You can use `AsCron` attribute for aui
+You can use `AsCron` attribute for autoconfigure.
 
 ```php
 <?php declare(strict_types=1);

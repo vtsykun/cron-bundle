@@ -83,4 +83,30 @@ final class ScheduleEnvelope
     {
         return isset($this->stamps[$stampFqcn]);
     }
+
+    public function __serialize(): array
+    {
+        $this->__sleep();
+
+        return [
+            'command' => $this->command,
+            'stamps' => $this->stamps,
+        ];
+    }
+
+    // For php7.2 BC support, __serialize only from php 7.4
+    public function __sleep()
+    {
+        foreach ($this->stamps as $name => $stamp) {
+            if ($stamp instanceof UnserializableStamp) {
+                unset($this->stamps[$name]);
+            }
+        }
+    }
+
+    public function __unserialize(array $data): void
+    {
+        $this->command = $data['command'];
+        $this->stamps = $data['stamps'];
+    }
 }

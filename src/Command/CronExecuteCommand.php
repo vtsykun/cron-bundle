@@ -41,13 +41,13 @@ class CronExecuteCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $fileContent = file_get_contents($input->getArgument('filename'));
-        $envelope = unserialize($fileContent);
+        $fileContent = \file_get_contents($input->getArgument('filename'));
+        $envelope = \unserialize($fileContent);
 
         try {
             $this->scheduleRunner->execute($envelope);
         } finally {
-            @unlink($input->getArgument('filename'));
+            @\unlink($input->getArgument('filename'));
         }
 
         return 0;
