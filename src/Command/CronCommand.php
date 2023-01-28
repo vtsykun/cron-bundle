@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Okvpn\Bundle\CronBundle\Command;
 
 use Okvpn\Bundle\CronBundle\Loader\ScheduleLoaderInterface;
+use Okvpn\Bundle\CronBundle\Model\LoggerAwareStamp;
 use Okvpn\Bundle\CronBundle\Runner\ScheduleRunnerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class CronCommand extends Command
@@ -83,6 +85,7 @@ class CronCommand extends Command
             $options['with'] = (array) $input->getOption('with');
         }
 
+        $loggerStamp = $this->createLoggerStamp($output);
         foreach ($this->loader->getSchedules($options) as $schedule) {
             if (null !== $command && $schedule->getCommand() !== $command) {
                 continue;
@@ -91,9 +94,21 @@ class CronCommand extends Command
             if ($without = $input->getOption('without')) {
                 $schedule = $schedule->without(...$without);
             }
+            if (null !== $loggerStamp) {
+                $schedule = $schedule->with($loggerStamp);
+            }
 
             $output->writeln(" > Scheduling run for command {$schedule->getCommand()} ...", OutputInterface::VERBOSITY_VERBOSE);
             $this->scheduleRunner->execute($schedule);
         }
+    }
+
+    protected function createLoggerStamp(OutputInterface $output)
+    {
+        if (class_exists(ConsoleLogger::class)) {
+            return new LoggerAwareStamp(new ConsoleLogger($output));
+        }
+
+        return null;
     }
 }

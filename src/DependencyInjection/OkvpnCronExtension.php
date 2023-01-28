@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Okvpn\Bundle\CronBundle\DependencyInjection;
 
+use Okvpn\Bundle\CronBundle\Attribute\AsCron;
 use Okvpn\Bundle\CronBundle\CronServiceInterface;
 use Okvpn\Bundle\CronBundle\CronSubscriberInterface;
 use Okvpn\Bundle\CronBundle\Loader\ScheduleLoaderInterface;
 use Okvpn\Bundle\CronBundle\Middleware\MiddlewareEngineInterface;
 use Okvpn\Bundle\CronBundle\Model;
+use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Exception\LogicException;
@@ -71,7 +73,7 @@ final class OkvpnCronExtension extends Extension
             ->replaceArgument(0, $config['with_stamps'] ?? [])
             ->replaceArgument(1, $defaultStamps);
         $container->getDefinition('okvpn_cron.middleware.cron_expression')
-            ->replaceArgument(0, $config['timezone']);
+            ->replaceArgument(1, $config['timezone']);
 
         $container->registerForAutoconfiguration(MiddlewareEngineInterface::class)
             ->addTag('okvpn_cron.middleware');
@@ -81,5 +83,11 @@ final class OkvpnCronExtension extends Extension
             ->addTag('okvpn.cron');
         $container->registerForAutoconfiguration(CronServiceInterface::class)
             ->addTag('okvpn.cron_service');
+
+        if (method_exists($container, 'registerAttributeForAutoconfiguration')) {
+            $container->registerAttributeForAutoconfiguration(AsCron::class, static function (ChildDefinition $definition, AsCron $cron) {
+                $definition->addTag('okvpn.cron', $cron->getAttributes());
+            });
+        }
     }
 }

@@ -16,21 +16,72 @@ Features
 - Not need doctrine/database.
 - Integration with Symfony Messenger.
 - Load a cron job from a different storage (config.yml, tagged services, commands).
-- Support many engines to run cron (in parallel process, message queue, consistently).
+- Support many engines to run cron (in parallel process, message queue, consistently), allow to use random expression.
 - Support many types of cron handlers/command: (services, symfony commands, UNIX shell commands).
 - Middleware and customization.
 
 ## Table of Contents
 
- - [Base Usage](#usage)
+ - [Install](#install)
  - [Registration a new scheduled task](#registration-a-new-scheduled-task)
  - [Configuration](#full-configuration-reference)
  - [Symfony Messenger Integration](#handle-cron-jobs-via-symfony-messenger)
  - [Your own Scheduled Tasks Loader](#your-own-scheduled-tasks-loaders)
  - [Handling cron jobs across a cluster](#handling-cron-jobs-across-a-cluster-or-custom-message-queue)
 
-Usage
------
+Install
+------
+
+Install using composer:
+
+```
+composer require okvpn/cron-bundle
+```
+
+For Symfony 4+ add bundle to `config/bundles.php`
+
+```php
+<?php
+return [
+    ... //  bundles
+    Okvpn\Bundle\CronBundle\OkvpnCronBundle::class => ['all' => true],
+]
+```
+
+##  Quick Usage 
+
+You can use `AsCron` attribute for aui
+
+```php
+<?php declare(strict_types=1);
+
+namespace App\Service;
+
+use Okvpn\Bundle\CronBundle\Attribute\AsCron;
+
+#[AsCron('*/5 * * * *')]
+class SyncAppWorker
+{
+    public function __invoke(array $arguments = []): void
+    {
+        // code
+    }
+}
+```
+
+### Cron Expression
+
+A CRON expression syntax was take from lib [dragonmantank/cron-expressions](https://github.com/dragonmantank/cron-expression#cron-expressions)
+
+Also, it was extent with `@random` to avoid running things at midnight or once an hour at XX:00.
+Most people do so and same services have traffic peaks every hour.
+
+Examples:
+```
+*/5 * * * *
+0 1 * * 0
+@randon 3600 # where 3600 - parameter lambda in poisson distribution, if it will run each seconds. Here avg probolity period is equals 1 hour.
+```
 
 #### First way. Install system crontab
 

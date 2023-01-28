@@ -4,21 +4,24 @@ declare(strict_types=1);
 
 namespace Okvpn\Bundle\CronBundle\Middleware;
 
-use Cron\CronExpression;
+use Okvpn\Bundle\CronBundle\Cron\CronChecker;
+use Okvpn\Bundle\CronBundle\Model\LoggerAwareStamp;
 use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
 use Okvpn\Bundle\CronBundle\Model\ScheduleStamp;
 
 final class CronMiddlewareEngine implements MiddlewareEngineInterface
 {
     private $timeZone;
+    private $checker;
 
-    public function __construct(string $timeZone = null)
+    public function __construct(CronChecker $checker, string $timeZone = null)
     {
         $this->timeZone = $timeZone;
+        $this->checker = $checker;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritdoc}
      */
     public function handle(ScheduleEnvelope $envelope, StackInterface $stack): ScheduleEnvelope
     {
@@ -26,7 +29,11 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
             return $stack->next()->handle($envelope, $stack);
         }
 
-        if (CronExpression::factory($stamp->cronExpression())->isDue('now', $this->timeZone)) {
+        if ($this->checker->isDue($stamp->cronExpression(), $this->timeZone)) {
+            if ($envelope->has(LoggerAwareStamp::class)) {
+                $envelope->get(LoggerAwareStamp::class)->getLogger()->info("> The schedule task {$envelope->getCommand()} is due now!");
+            }
+
             return $stack->next()->handle($envelope->without(ScheduleStamp::class), $stack);
         }
 

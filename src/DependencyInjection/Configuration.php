@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Okvpn\Bundle\CronBundle\DependencyInjection;
 
-use Cron\CronExpression;
+use Okvpn\Bundle\CronBundle\Cron\CronChecker;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -55,7 +55,7 @@ final class Configuration implements ConfigurationInterface
                         ->scalarNode('cron')
                             ->validate()
                             ->always(function ($value) {
-                                if ($value && false === CronExpression::isValidExpression($value)) {
+                                if ($value && false === CronChecker::isValidExpression($value)) {
                                     throw new \InvalidArgumentException(sprintf('This value "%s" is not a valid cron expression', $value));
                                 }
                                 return $value;
