@@ -351,6 +351,42 @@ services:
 
 ## Handling cron jobs across a cluster or custom message queue 
 
+You can use the cron `$group` to split many scheduled tasks between clusters, see example:
+
+```php
+<?php declare(strict_types=1);
+namespace App\Cron;
+
+class EntityCronLoader implements ScheduleLoaderInterface
+{
+    public function getSchedules(array $options = []): iterable
+    {
+        if (!\in_array($group = $options['group'] ?? 'default', ['default', 'all_chunk']) && !\str_starts_with($group, 'chunk_')) {
+            return;
+        }
+        
+        $chunkId = str_replace('chunk_', '', $group)
+        foreach ($this->registry->getAllRepos($chunkId) as $name => $repo) {
+            $expr = '@random ' . $this->getSyncInterval($repo);
+            
+            yield new ScheduleEnvelope(
+                'sync:mirrors',
+                new Model\ScheduleStamp($expr),
+                new WorkerStamp(true),
+                new Model\ArgumentsStamp(['mirror' => $name,])
+            );
+        }
+    }
+}
+```
+
+```
+[program:app-cron]
+command=/path/to/bin/console okvpn:cron --env=prod --demand --group=chunk_%process_num%
+process_name=%(program_name)s_%(process_num)02d
+numprocs=1
+```
+
 See example of customization 
 [one](https://github.com/vtsykun/packeton/tree/master/src/Cron/WorkerMiddleware.php), 
 [two](https://github.com/vtsykun/packeton/tree/master/src/Cron/CronWorker.php)
