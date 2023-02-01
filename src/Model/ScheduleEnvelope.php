@@ -95,13 +95,15 @@ final class ScheduleEnvelope
     }
 
     // For php7.2 BC support, __serialize only from php 7.4
-    public function __sleep()
+    public function __sleep(): array
     {
         foreach ($this->stamps as $name => $stamp) {
             if ($stamp instanceof UnserializableStamp) {
                 unset($this->stamps[$name]);
             }
         }
+
+        return ['command', 'stamps'];
     }
 
     public function __unserialize(array $data): void
