@@ -14,7 +14,7 @@ class CronChecker
     {
         foreach (static::$exprMapping as $expr => $callable) {
             if (\strpos($cron, $expr) === 0) {
-                return call_user_func($callable, $cron, $timeZone, $current, $expr);
+                return \call_user_func($callable, $cron, $timeZone, $current, $expr);
             }
         }
 

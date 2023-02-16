@@ -13,11 +13,13 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
 {
     private $timeZone;
     private $checker;
+    private $clock;
 
-    public function __construct(CronChecker $checker, string $timeZone = null)
+    public function __construct(CronChecker $checker, string $timeZone = null, /*\Psr\Clock\ClockInterface*/ $clock = null)
     {
         $this->timeZone = $timeZone;
         $this->checker = $checker;
+        $this->clock = $clock;
     }
 
     /**
@@ -29,7 +31,7 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
             return $stack->next()->handle($envelope, $stack);
         }
 
-        if ($this->checker->isDue($stamp->cronExpression(), $this->timeZone)) {
+        if ($this->checker->isDue($stamp->cronExpression(), $this->timeZone, $this->clock ? $this->clock->now() : 'now')) {
             if ($envelope->has(LoggerAwareStamp::class)) {
                 $envelope->get(LoggerAwareStamp::class)->getLogger()->info("> The schedule task {$envelope->getCommand()} is due now!");
             }

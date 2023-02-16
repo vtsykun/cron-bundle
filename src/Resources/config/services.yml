@@ -22,7 +22,7 @@ services:
     okvpn_cron.middleware.cron_expression:
         class: Okvpn\Bundle\CronBundle\Middleware\CronMiddlewareEngine
         public: false
-        arguments: ['@okvpn_cron.checker', ~]
+        arguments: ['@okvpn_cron.checker', ~, ~]
         tags:
             - { name: okvpn_cron.middleware, priority: 20 }
 
