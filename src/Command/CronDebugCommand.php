@@ -5,21 +5,25 @@ declare(strict_types=1);
 namespace Okvpn\Bundle\CronBundle\Command;
 
 use Okvpn\Bundle\CronBundle\Loader\ScheduleLoaderInterface;
+use Okvpn\Bundle\CronBundle\Model\ArgumentsStamp;
 use Okvpn\Bundle\CronBundle\Model\LoggerAwareStamp;
+use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
+use Okvpn\Bundle\CronBundle\Model\ScheduleStamp;
 use Okvpn\Bundle\CronBundle\Runner\ScheduleRunnerInterface;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class CronCommand extends Command
+class CronDebugCommand extends Command
 {
-    private $scheduleRunner;
-    private $loader;
+    protected $scheduleRunner;
+    protected $loader;
 
-    protected static $defaultName = 'okvpn:cron';
-    protected static $defaultDescription = 'Runs currently schedule cron';
+    protected static $defaultName = 'okvpn:debug:cron';
+    protected static $defaultDescription = 'Debug and execute cron jobs manually and show list';
 
     /**
      * @param ScheduleRunnerInterface $scheduleRunner
@@ -42,10 +46,8 @@ class CronCommand extends Command
             ->setDescription(self::$defaultDescription)
             ->addOption('with', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'StampFqcn to add command stamp to all schedules')
             ->addOption('without', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'StampFqcn to remove command stamp from all schedules.')
-            ->addOption('command', null, InputOption::VALUE_OPTIONAL, 'Run only selected command')
-            ->addOption('demand', null, InputOption::VALUE_NONE, 'Start cron scheduler every one minute without exit')
-            ->addOption('group', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'Run schedules for specific groups.')
-            ->addOption('time-limit', null, InputOption::VALUE_OPTIONAL, 'Run cron scheduler during this time (sec.)');
+            ->addOption('execute-one', null, InputOption::VALUE_OPTIONAL, 'Execute a selected cron job by the number.')
+            ->addOption('group', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'Run schedules for specific groups.');
     }
 
     /**
@@ -53,45 +55,19 @@ class CronCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        if ($input->getOption('demand')) {
-            $output->writeln('Run scheduler without exit');
-            $startTime = \time();
-            $timeLimit = $input->getOption('time-limit');
-
-            while ($now = \time() and (null === $timeLimit || $now - $startTime < $timeLimit)) {
-                \sleep(60 - ($now % 60));
-                $runAt = \microtime(true);
-                $this->scheduler($input, $output);
-                $output->writeln(sprintf('All schedule tasks completed in %.3f seconds', \microtime(true) - $runAt), OutputInterface::VERBOSITY_VERBOSE);
-            }
-        } else {
-            $this->scheduler($input, $output);
-        }
-
-        return 0;
-    }
-
-    /**
-     * @param InputInterface $input
-     * @param OutputInterface $output
-     */
-    protected function scheduler(InputInterface $input, OutputInterface $output): void
-    {
         $options = [];
-        $command = $input->getOption('command');
         if ($input->getOption('group')) {
             $options['groups'] = (array) $input->getOption('group');
         }
         if ($input->getOption('with')) {
             $options['with'] = (array) $input->getOption('with');
         }
-
         $loggerStamp = $this->createLoggerStamp($output);
-        foreach ($this->loader->getSchedules($options) as $schedule) {
-            if (null !== $command && $schedule->getCommand() !== $command) {
-                continue;
-            }
+        $executeOne = (int)($input->getOption('execute-one') ?: -1);
 
+        $jobs = [];
+        $number = 0;
+        foreach ($this->loader->getSchedules($options) as $schedule) {
             if ($without = $input->getOption('without')) {
                 $schedule = $schedule->without(...$without);
             }
@@ -99,9 +75,38 @@ class CronCommand extends Command
                 $schedule = $schedule->with($loggerStamp);
             }
 
-            $output->writeln(" > Scheduling run for command {$schedule->getCommand()} ...", OutputInterface::VERBOSITY_VERBOSE);
-            $this->scheduleRunner->execute($schedule);
+            if ($executeOne === $number) {
+                $output->writeln(" > Scheduling run for command {$schedule->getCommand()} ...");
+                $this->scheduleRunner->execute($schedule->without(ScheduleStamp::class));
+                return 0;
+            }
+
+            $jobs[] = $this->getJobInfo($number, $schedule);
+            $number++;
         }
+
+
+        $table = new Table($output);
+        $table
+            ->setHeaders(['ID', 'Command', 'Cron', 'Arguments'])
+            ->setRows($jobs);
+
+        $table->render();
+
+        return 0;
+    }
+
+    protected function getJobInfo(int $id, ScheduleEnvelope $envelope): array
+    {
+        $info = [$id, $envelope->getCommand()];
+
+        $stamp = $envelope->get(ScheduleStamp::class);
+        $info[] = $stamp ? $stamp->cronExpression() : '*';
+
+        $stamp = $envelope->get(ArgumentsStamp::class);
+        $info[] = $stamp ? @\json_encode($stamp->getArguments()) : '[]';
+
+        return $info;
     }
 
     protected function createLoggerStamp(OutputInterface $output)
