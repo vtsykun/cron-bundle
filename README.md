@@ -72,6 +72,31 @@ class SyncAppWorker
 }
 ```
 
+### Commands
+
+Runs the current cron schedule
+
+```
+# Add this line to system crontab and execute each minute.
+php bin/console okvpn:cron 
+
+# Run cron scheduler every minute without exiting.
+php bin/console okvpn:cron --demand 
+
+# Run cron scheduler for specific groups.
+php bin/console okvpn:cron --group  
+```
+
+Debug and execute cron jobs manually and show list
+
+```
+php bin/console okvpn:debug:cron 
+
+php bin/console okvpn:debug:cron --execute-one=7
+```
+
+![debug](docs/image1.png)
+
 ### Cron Expression
 
 A CRON expression syntax was take from lib [dragonmantank/cron-expressions](https://github.com/dragonmantank/cron-expression#cron-expressions)
@@ -83,7 +108,7 @@ Examples:
 ```
 */5 * * * * - every 5 min 
 0 1 * * 0 - at 1 am every Sunday
-@random 3600 # where 3600 - parameter lambda in poisson distribution, if it will run each seconds. Here, the avg probability period is 1 hour.
+@random 3600 # where 3600 - parameter lambda in the Poisson distribution, if it will run each seconds. Here, the avg probability period is 1 hour.
 ```
 
 #### First way. Install system crontab

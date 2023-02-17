@@ -93,6 +93,13 @@ services:
         tags:
             - { name: console.command }
 
+    Okvpn\Bundle\CronBundle\Command\CronDebugCommand:
+        arguments:
+            - '@okvpn_cron.runner_default'
+            - '@okvpn_cron.loader_default'
+        tags:
+            - { name: console.command }
+
     Okvpn\Bundle\CronBundle\Command\CronExecuteCommand:
         arguments:
             - '@okvpn_cron.runner_default'
