@@ -18,9 +18,6 @@ class CronCommand extends Command
     private $scheduleRunner;
     private $loader;
 
-    protected static $defaultName = 'okvpn:cron';
-    protected static $defaultDescription = 'Runs currently schedule cron';
-
     /**
      * @param ScheduleRunnerInterface $scheduleRunner
      * @param ScheduleLoaderInterface $loader
@@ -38,8 +35,8 @@ class CronCommand extends Command
      */
     protected function configure(): void
     {
-        $this->setName(self::$defaultName)
-            ->setDescription(self::$defaultDescription)
+        $this->setName('okvpn:cron')
+            ->setDescription('Runs currently schedule cron')
             ->addOption('with', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'StampFqcn to add command stamp to all schedules')
             ->addOption('without', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'StampFqcn to remove command stamp from all schedules.')
             ->addOption('command', null, InputOption::VALUE_OPTIONAL, 'Run only selected command')
