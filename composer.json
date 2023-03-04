@@ -1,6 +1,6 @@
 {
     "name": "okvpn/cron-bundle",
-    "description": "Symfony cron bundle for handle scheduled tasks consistently, parallel or across a cluster, like Symfony Messenger",
+    "description": "Docker friendly Symfony cron bundle for handle scheduled tasks consistently, parallel or across a cluster, like Symfony Messenger",
     "type": "symfony-bundle",
     "license": "MIT",
     "homepage": "https://github.com/vtsykun/cron-bundle",

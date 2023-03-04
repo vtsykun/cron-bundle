@@ -17,6 +17,7 @@ Features
 --------
 
 - Not need doctrine/database.
+- Docker friendly, runs as background command without `crond`.
 - Integration with Symfony Messenger.
 - Load a cron job from a different storage (config.yml, tagged services, commands).
 - Support many engines to run cron (in parallel process, message queue, consistently), allow to use `random` expression.
