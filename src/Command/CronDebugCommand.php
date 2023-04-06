@@ -63,7 +63,7 @@ class CronDebugCommand extends Command
             $options['with'] = (array) $input->getOption('with');
         }
         $loggerStamp = $this->createLoggerStamp($output);
-        $executeOne = (int)($input->getOption('execute-one') ?: -1);
+        $executeOne = (int)($input->getOption('execute-one') !== null ? $input->getOption('execute-one') : -1);
 
         $jobs = [];
         $number = 0;
