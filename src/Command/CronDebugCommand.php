@@ -10,6 +10,7 @@ use Okvpn\Bundle\CronBundle\Model\LoggerAwareStamp;
 use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
 use Okvpn\Bundle\CronBundle\Model\ScheduleStamp;
 use Okvpn\Bundle\CronBundle\Runner\ScheduleRunnerInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,6 +18,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand('okvpn:debug:cron', description: 'Debug and execute cron jobs manually and show list')]
 class CronDebugCommand extends Command
 {
     protected $scheduleRunner;
@@ -101,7 +103,7 @@ class CronDebugCommand extends Command
         $info = [$id, $envelope->getCommand()];
 
         $stamp = $envelope->get(ScheduleStamp::class);
-        $info[] = $stamp ? $stamp->cronExpression() : '*';
+        $info[] = $stamp ? $stamp->cronExpression() : '"null"';
 
         $stamp = $envelope->get(ArgumentsStamp::class);
         $info[] = $stamp ? @\json_encode($stamp->getArguments()) : '[]';

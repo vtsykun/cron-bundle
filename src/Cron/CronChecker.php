@@ -18,7 +18,7 @@ class CronChecker
             }
         }
 
-        return CronExpression::factory($cron)->isDue($current, $timeZone);
+        return (new CronExpression($cron))->isDue($current, $timeZone);
     }
 
     public static function addExprMapping(string $expr, $callable): void

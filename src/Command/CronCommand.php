@@ -7,12 +7,14 @@ namespace Okvpn\Bundle\CronBundle\Command;
 use Okvpn\Bundle\CronBundle\Loader\ScheduleLoaderInterface;
 use Okvpn\Bundle\CronBundle\Model\LoggerAwareStamp;
 use Okvpn\Bundle\CronBundle\Runner\ScheduleRunnerInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand('okvpn:cron', description: 'Runs currently schedule cron')]
 class CronCommand extends Command
 {
     private $scheduleRunner;
@@ -96,7 +98,6 @@ class CronCommand extends Command
                 $schedule = $schedule->with($loggerStamp);
             }
 
-            $output->writeln(" > Scheduling run for command {$schedule->getCommand()} ...", OutputInterface::VERBOSITY_VERBOSE);
             $this->scheduleRunner->execute($schedule);
         }
     }
