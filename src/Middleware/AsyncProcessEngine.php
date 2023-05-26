@@ -41,7 +41,7 @@ final class AsyncProcessEngine implements MiddlewareEngineInterface
             '%s %s %s %s',
             $phpPath,
             $_SERVER['argv'][0],
-            CronExecuteCommand::$defaultName,
+            'okvpn:cron:execute-job', //CronExecuteCommand
             $filename
         );
 

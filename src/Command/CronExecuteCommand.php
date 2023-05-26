@@ -17,8 +17,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand('okvpn:cron:execute-job', description: 'INTERNAL!!!. Execute cron command from file.', hidden: true)]
 class CronExecuteCommand extends Command
 {
-    public static $defaultName = 'okvpn:cron:execute-job';
-
     private $scheduleRunner;
 
     public function __construct(ScheduleRunnerInterface $scheduleRunner)
@@ -33,7 +31,9 @@ class CronExecuteCommand extends Command
      */
     protected function configure(): void
     {
-        $this->addArgument('filename', InputArgument::REQUIRED, 'PHP serialized cron job')
+        $this
+            ->setName('okvpn:cron:execute-job')
+            ->addArgument('filename', InputArgument::REQUIRED, 'PHP serialized cron job')
             ->setDescription('INTERNAL!!!. Execute cron command from file.')
             ->setHidden(true);
     }

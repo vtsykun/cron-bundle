@@ -24,9 +24,6 @@ class CronDebugCommand extends Command
     protected $scheduleRunner;
     protected $loader;
 
-    protected static $defaultName = 'okvpn:debug:cron';
-    protected static $defaultDescription = 'Debug and execute cron jobs manually and show list';
-
     /**
      * @param ScheduleRunnerInterface $scheduleRunner
      * @param ScheduleLoaderInterface $loader
@@ -44,8 +41,8 @@ class CronDebugCommand extends Command
      */
     protected function configure(): void
     {
-        $this->setName(self::$defaultName)
-            ->setDescription(self::$defaultDescription)
+        $this->setName('okvpn:debug:cron')
+            ->setDescription('Debug and execute cron jobs manually and show list')
             ->addOption('with', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'StampFqcn to add command stamp to all schedules')
             ->addOption('without', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'StampFqcn to remove command stamp from all schedules.')
             ->addOption('execute-one', null, InputOption::VALUE_OPTIONAL, 'Execute a selected cron job by the number.')
