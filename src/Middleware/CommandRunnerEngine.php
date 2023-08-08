@@ -35,7 +35,7 @@ final class CommandRunnerEngine implements MiddlewareEngineInterface
             $commandArguments = $envelope->get(ArgumentsStamp::class) ?
                 $envelope->get(ArgumentsStamp::class)->getArguments() : [];
 
-            $input = new ArrayInput(array_merge(['command' => $handler->getName()], $commandArguments));
+            $input = new ArrayInput($commandArguments);
 
             $output = new BufferedOutput();
             $handler->run($input, $output);
