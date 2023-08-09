@@ -11,18 +11,21 @@ final class AsCron
     public $lock;
     public $async;
     public $options;
+    public $messenger;
 
     public function __construct(
         string $cron,
         bool $lock = null,
         bool $async = null,
         array $options = [],
+        bool $messenger = null
     ) {
         // Replace when update PHP > 7.2
         $this->async = $async;
         $this->lock = $lock;
         $this->cron = $cron;
         $this->options = $options;
+        $this->messenger = $messenger;
     }
 
     public function getAttributes(): array
