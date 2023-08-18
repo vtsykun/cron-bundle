@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Okvpn\Bundle\CronBundle\Loader;
 
+use Okvpn\Bundle\CronBundle\Model\JitterStamp;
+use Okvpn\Bundle\CronBundle\Model\PeriodicalStampInterface;
 use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
-
 
 final class ScheduleFactory implements ScheduleFactoryInterface
 {
@@ -43,6 +44,11 @@ final class ScheduleFactory implements ScheduleFactoryInterface
             }
         }
 
-        return new ScheduleEnvelope($config['command'], ...$stamps);
+        $envelope = new ScheduleEnvelope($config['command'], ...$stamps);
+        if (is_numeric($config['jitter'] ?? null) && ($stamp = $envelope->get(PeriodicalStampInterface::class))) {
+            $envelope = $envelope->with(new JitterStamp((int)$config['jitter'], $stamp));
+        }
+
+        return $envelope;
     }
 }

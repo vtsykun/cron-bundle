@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Okvpn\Bundle\CronBundle\DependencyInjection;
 
 use Okvpn\Bundle\CronBundle\Attribute\AsCron;
+use Okvpn\Bundle\CronBundle\Attribute\AsPeriodicalTask;
 use Okvpn\Bundle\CronBundle\CronServiceInterface;
 use Okvpn\Bundle\CronBundle\CronSubscriberInterface;
 use Okvpn\Bundle\CronBundle\Loader\ScheduleLoaderInterface;
@@ -64,7 +65,8 @@ final class OkvpnCronExtension extends Extension
             'messenger' => Model\MessengerStamp::class,
             'cron' => Model\ScheduleStamp::class,
             'async' => Model\AsyncStamp::class,
-            'arguments' => Model\ArgumentsStamp::class
+            'arguments' => Model\ArgumentsStamp::class,
+            'interval' => Model\PeriodicalScheduleStamp::class
         ];
 
         $container->getDefinition('okvpn_cron.array_loader')
@@ -72,8 +74,10 @@ final class OkvpnCronExtension extends Extension
         $container->getDefinition('okvpn_cron.schedule_factory')
             ->replaceArgument(0, $config['with_stamps'] ?? [])
             ->replaceArgument(1, $defaultStamps);
+
         $container->getDefinition('okvpn_cron.middleware.cron_expression')
             ->replaceArgument(1, $config['timezone']);
+        $container->setParameter('okvpn.config.cron_timezone', $config['timezone']);
 
         $container->registerForAutoconfiguration(MiddlewareEngineInterface::class)
             ->addTag('okvpn_cron.middleware');
@@ -86,6 +90,10 @@ final class OkvpnCronExtension extends Extension
 
         if (method_exists($container, 'registerAttributeForAutoconfiguration')) {
             $container->registerAttributeForAutoconfiguration(AsCron::class, static function (ChildDefinition $definition, AsCron $cron) {
+                $definition->addTag('okvpn.cron', $cron->getAttributes());
+            });
+
+            $container->registerAttributeForAutoconfiguration(AsPeriodicalTask::class, static function (ChildDefinition $definition, AsPeriodicalTask $cron) {
                 $definition->addTag('okvpn.cron', $cron->getAttributes());
             });
         }

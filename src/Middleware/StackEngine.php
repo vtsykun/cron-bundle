@@ -56,4 +56,11 @@ final class StackEngine implements StackInterface, MiddlewareEngineInterface
     {
         return $envelope;
     }
+
+    public function __clone()
+    {
+        if (null !== $this->iterator) {
+            $this->iterator = clone $this->iterator;
+        }
+    }
 }
