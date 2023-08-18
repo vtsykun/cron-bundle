@@ -27,6 +27,7 @@ final class Configuration implements ConfigurationInterface
         // this will leave the search functionality and if you need to update the index, you can do it manually
         $rootNode->children()
             ->scalarNode('timezone')->defaultNull()->end()
+            ->scalarNode('loop_engine')->defaultNull()->end()
             ->arrayNode('messenger')
                 ->children()
                     ->booleanNode('enable')->defaultFalse()->end()
@@ -63,6 +64,7 @@ final class Configuration implements ConfigurationInterface
                             ->end()
                         ->end()
                         ->integerNode('timeout')->end()
+                        ->scalarNode('interval')->end()
                     ->end()
                 ->end()
             ->end();

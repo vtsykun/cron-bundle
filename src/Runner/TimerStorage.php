@@ -8,9 +8,9 @@ use Okvpn\Bundle\CronBundle\Model\EnvelopeTools as ET;
 use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
 
 /**
- * Storage all running timers for demand crond.
+ * Storage of all running timers for a crond demand.
  *
- * Simply access to schedule tasks
+ * Gives easy access to active scheduled tasks
  */
 class TimerStorage
 {

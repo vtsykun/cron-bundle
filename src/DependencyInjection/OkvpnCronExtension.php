@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Okvpn\Bundle\CronBundle\DependencyInjection;
 
 use Okvpn\Bundle\CronBundle\Attribute\AsCron;
-use Okvpn\Bundle\CronBundle\Attribute\AsPeriodicalTask;
+use Okvpn\Bundle\CronBundle\Attribute\AsPeriodicTask;
 use Okvpn\Bundle\CronBundle\CronServiceInterface;
 use Okvpn\Bundle\CronBundle\CronSubscriberInterface;
 use Okvpn\Bundle\CronBundle\Loader\ScheduleLoaderInterface;
 use Okvpn\Bundle\CronBundle\Middleware\MiddlewareEngineInterface;
 use Okvpn\Bundle\CronBundle\Model;
+use Okvpn\Bundle\CronBundle\Runner\ScheduleLoopInterface;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;
@@ -53,6 +54,8 @@ final class OkvpnCronExtension extends Extension
                 ->replaceArgument(0, new Reference($config['lock_factory']));
         }
 
+        $container->setAlias(ScheduleLoopInterface::class, $config['loop_engine'] ?? 'okvpn_cron.standalone_loop');
+
         $tasks = [];
         foreach (($config['tasks'] ?? []) as $task) {
             $task['shell'] = $task['shell'] ?? true;
@@ -93,7 +96,7 @@ final class OkvpnCronExtension extends Extension
                 $definition->addTag('okvpn.cron', $cron->getAttributes());
             });
 
-            $container->registerAttributeForAutoconfiguration(AsPeriodicalTask::class, static function (ChildDefinition $definition, AsPeriodicalTask $cron) {
+            $container->registerAttributeForAutoconfiguration(AsPeriodicTask::class, static function (ChildDefinition $definition, AsPeriodicTask $cron) {
                 $definition->addTag('okvpn.cron', $cron->getAttributes());
             });
         }

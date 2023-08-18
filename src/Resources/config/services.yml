@@ -27,7 +27,7 @@ services:
             - '@okvpn_cron.checker'
             - '%okvpn.config.cron_timezone%'
             - '@?clock'
-            - '@okvpn_cron.schedule_loop'
+            - '@Okvpn\Bundle\CronBundle\Runner\ScheduleLoopInterface'
             - '@Okvpn\Bundle\CronBundle\Runner\TimerStorage'
         tags:
             - { name: okvpn_cron.middleware, priority: 20 }
@@ -94,17 +94,18 @@ services:
 
     Okvpn\Bundle\CronBundle\Runner\TimerStorage: ~
 
-#    okvpn_cron.schedule_loop:
-#        class: Okvpn\Bundle\CronBundle\Runner\StandaloneLoop
-#        arguments:
-#            - '@?clock'
-#            - '%okvpn.config.cron_timezone%'
-#
-    okvpn_cron.schedule_loop:
-        alias: Okvpn\Bundle\CronBundle\React\ReactLoopAdapter
+    okvpn_cron.standalone_loop:
+        class: Okvpn\Bundle\CronBundle\Runner\StandaloneLoop
+        arguments:
+            - '@?clock'
+            - '%okvpn.config.cron_timezone%'
+
+    okvpn_cron.react_loop:
+        class: Okvpn\Bundle\CronBundle\React\ReactLoopAdapter
+        arguments: [~, '%okvpn.config.cron_timezone%']
     
     Okvpn\Bundle\CronBundle\Runner\ScheduleLoopInterface:
-        alias: okvpn_cron.schedule_loop
+        alias: okvpn_cron.standalone_loop
 
     Okvpn\Bundle\CronBundle\React\ReactLoopAdapter:
         arguments:
@@ -116,7 +117,7 @@ services:
             - '@okvpn_cron.runner_default'
             - '@okvpn_cron.loader_default'
             - '@?event_dispatcher'
-            - '@okvpn_cron.schedule_loop'
+            - '@Okvpn\Bundle\CronBundle\Runner\ScheduleLoopInterface'
             - '@?clock'
             - '%okvpn.config.cron_timezone%'
         tags:

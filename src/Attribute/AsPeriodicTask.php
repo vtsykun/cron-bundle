@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Okvpn\Bundle\CronBundle\Attribute;
 
 #[\Attribute(\Attribute::TARGET_CLASS)]
-class AsPeriodicalTask
+class AsPeriodicTask
 {
     public $interval;
     public $lock;
@@ -15,7 +15,7 @@ class AsPeriodicalTask
     public $jitter;
 
     public function __construct(
-        int $interval,
+        /*int|string */ $interval,
         bool $lock = null,
         bool $async = null,
         bool $messenger = null,
