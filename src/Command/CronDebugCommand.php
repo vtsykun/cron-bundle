@@ -7,8 +7,8 @@ namespace Okvpn\Bundle\CronBundle\Command;
 use Okvpn\Bundle\CronBundle\Loader\ScheduleLoaderInterface;
 use Okvpn\Bundle\CronBundle\Model\ArgumentsStamp;
 use Okvpn\Bundle\CronBundle\Model\LoggerAwareStamp;
+use Okvpn\Bundle\CronBundle\Model\PeriodicalStampInterface;
 use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
-use Okvpn\Bundle\CronBundle\Model\ScheduleStamp;
 use Okvpn\Bundle\CronBundle\Runner\ScheduleRunnerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -76,7 +76,7 @@ class CronDebugCommand extends Command
 
             if ($executeOne === $number) {
                 $output->writeln(" > Scheduling run for command {$schedule->getCommand()} ...");
-                $this->scheduleRunner->execute($schedule->without(ScheduleStamp::class));
+                $this->scheduleRunner->execute($schedule->without(PeriodicalStampInterface::class));
                 return 0;
             }
 
@@ -99,8 +99,8 @@ class CronDebugCommand extends Command
     {
         $info = [$id, $envelope->getCommand()];
 
-        $stamp = $envelope->get(ScheduleStamp::class);
-        $info[] = $stamp ? $stamp->cronExpression() : '"null"';
+        $stamp = $envelope->get(PeriodicalStampInterface::class);
+        $info[] = $stamp ? (string)$stamp : '"null"';
 
         $stamp = $envelope->get(ArgumentsStamp::class);
         $info[] = $stamp ? @\json_encode($stamp->getArguments()) : '[]';

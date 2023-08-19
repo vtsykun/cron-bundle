@@ -29,6 +29,7 @@ final class ScheduleRunner implements ScheduleRunnerInterface
             : $this->middleware;
 
         $aggregate = new \ArrayObject($middleware);
+        /** @var \Iterator<int, MiddlewareEngineInterface> $handlersIterator */
         $handlersIterator = $aggregate->getIterator();
         $handlersIterator->rewind();
 

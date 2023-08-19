@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Okvpn\Bundle\CronBundle\Attribute;
 
 #[\Attribute(\Attribute::TARGET_CLASS)]
-final class AsCron
+class AsPeriodicTask
 {
-    public $cron;
+    public $interval;
     public $lock;
     public $async;
     public $options;
@@ -15,17 +15,16 @@ final class AsCron
     public $jitter;
 
     public function __construct(
-        string $cron,
+        /*int|string */ $interval,
         bool $lock = null,
         bool $async = null,
-        array $options = [],
         bool $messenger = null,
         int $jitter = null,
+        array $options = [],
     ) {
-        // Replace when update PHP > 7.2
         $this->async = $async;
         $this->lock = $lock;
-        $this->cron = $cron;
+        $this->interval = $interval;
         $this->options = $options;
         $this->messenger = $messenger;
         $this->jitter = $jitter;

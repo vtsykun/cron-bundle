@@ -17,11 +17,7 @@ final class ScheduleEnvelope
         $this->command = $command;
 
         foreach ($stamps as $stamp) {
-            $stampRefl = new \ReflectionObject($stamp);
-            while ($stampRefl) {
-                $this->stamps[$stampRefl->getName()] = $stamp;
-                $stampRefl = $stampRefl->getParentClass();
-            }
+            $this->addStamp($stamp, $this);
         }
     }
 
@@ -42,11 +38,7 @@ final class ScheduleEnvelope
         $cloned = clone $this;
 
         foreach ($stamps as $stamp) {
-            $stampRefl = new \ReflectionObject($stamp);
-            while ($stampRefl) {
-                $cloned->stamps[$stampRefl->getName()] = $stamp;
-                $stampRefl = $stampRefl->getParentClass();
-            }
+            $this->addStamp($stamp, $cloned);
         }
 
         return $cloned;
@@ -60,15 +52,18 @@ final class ScheduleEnvelope
     {
         $cloned = clone $this;
         foreach ($stampsFqcn as $stampFqcn) {
-            unset($cloned->stamps[$stampFqcn]);
+            $this->removeStamp($stampFqcn, $cloned);
         }
 
         return $cloned;
     }
 
     /**
-     * @param string $stampFqcn
-     * @return CommandStamp|null
+     * @template TStamp of CommandStamp
+     *
+     * @param class-string<TStamp> $stampFqcn
+     *
+     * @return TStamp|null
      */
     public function get(string $stampFqcn): ?CommandStamp
     {
@@ -110,5 +105,36 @@ final class ScheduleEnvelope
     {
         $this->command = $data['command'];
         $this->stamps = $data['stamps'];
+    }
+
+    private function addStamp($stamp, ScheduleEnvelope $envelope): void
+    {
+        $stampRefl = new \ReflectionObject($stamp);
+        foreach ($stampRefl->getInterfaceNames() as $interfaceName) {
+            $envelope->stamps[$interfaceName] = $stamp;
+        }
+
+        while ($stampRefl) {
+            $envelope->stamps[$stampRefl->getName()] = $stamp;
+            $stampRefl = $stampRefl->getParentClass();
+        }
+    }
+
+    private function removeStamp($stamp, ScheduleEnvelope $envelope): void
+    {
+        $stampRefl = \is_object($stamp) ? new \ReflectionObject($stamp) : (\class_exists($stamp) || \interface_exists($stamp) ? new \ReflectionClass($stamp) : null);
+        if (\is_string($stamp)) {
+            unset($envelope->stamps[$stamp]);
+        }
+
+        if (null !== $stampRefl) {
+            foreach ($stampRefl->getInterfaceNames() as $interfaceName) {
+                unset($envelope->stamps[$interfaceName]);
+            }
+            while ($stampRefl) {
+                unset($envelope->stamps[$stampRefl->getName()]);
+                $stampRefl = $stampRefl->getParentClass();
+            }
+        }
     }
 }

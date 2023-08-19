@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Okvpn\Bundle\CronBundle\Middleware;
 
 use Okvpn\Bundle\CronBundle\Cron\CronChecker;
-use Okvpn\Bundle\CronBundle\Model\ArgumentsStamp;
-use Okvpn\Bundle\CronBundle\Model\LoggerAwareStamp;
+use Okvpn\Bundle\CronBundle\Model\EnvelopeTools as ET;
+use Okvpn\Bundle\CronBundle\Model\EnvironmentStamp;
+use Okvpn\Bundle\CronBundle\Model\PeriodicalStampInterface;
 use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
 use Okvpn\Bundle\CronBundle\Model\ScheduleStamp;
+use Okvpn\Bundle\CronBundle\Runner\ScheduleLoopInterface;
+use Okvpn\Bundle\CronBundle\Runner\TimerStorage;
+use Psr\Clock\ClockInterface as PsrClockInterface;
 
 final class CronMiddlewareEngine implements MiddlewareEngineInterface
 {
@@ -16,11 +20,19 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
     private $checker;
     private $clock;
 
-    public function __construct(CronChecker $checker, string $timeZone = null, /*\Psr\Clock\ClockInterface*/ $clock = null)
+    /** @var ScheduleLoopInterface|null */
+    private $scheduleLoop;
+
+    private $lastLoopTasks = [];
+    private $timers;
+
+    public function __construct(CronChecker $checker, string $timeZone = null, PsrClockInterface $clock = null, ScheduleLoopInterface $scheduleLoop = null, TimerStorage $timers = null)
     {
         $this->timeZone = $timeZone;
         $this->checker = $checker;
         $this->clock = $clock;
+        $this->scheduleLoop = $scheduleLoop;
+        $this->timers = $timers ?? new TimerStorage();
     }
 
     /**
@@ -28,40 +40,130 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
      */
     public function handle(ScheduleEnvelope $envelope, StackInterface $stack): ScheduleEnvelope
     {
-        if (!$stamp = $envelope->get(ScheduleStamp::class)) {
-            $this->log($envelope, "> Run schedule task {{ task }}");
+        $env = $envelope->has(EnvironmentStamp::class) ? $envelope->get(EnvironmentStamp::class)->toArray() : [];
+        // For testing usage. drops next middlewares
+        if ($dryRun = ($env['dry-run'] ?? false)) {
+            $stack->end();
+        }
+
+        if (!$stamp = $envelope->get(PeriodicalStampInterface::class)) {
+            $dryRun ? null : ET::info($envelope, "{{ task }} > Run schedule task.");
             return $stack->next()->handle($envelope, $stack);
         }
 
-        try {
-            $isDue = $this->checker->isDue($expr = $stamp->cronExpression(), $this->timeZone, $this->clock ? $this->clock->now() : 'now');
-        } catch (\Throwable $e) {
-            $this->log($envelope, "> The cron expression $expr for task {{ task }} is invalid. {$e->getMessage()}", 'error', ['e' => $e]);
-            return $stack->end()->handle($envelope, $stack);
+        $useDemand = $env['demand'] ?? false;
+        $noLoop = $env['no-loop'] ?? false;
+        $now = ($env['now'] ?? null) instanceof \DateTimeInterface ? $env['now'] : $this->getNow();
+
+        return true === $useDemand && null !== $this->scheduleLoop && false === $noLoop ?
+            $this->handleDemand($now, $envelope, $stamp, $stack) :
+            $this->handleNoDemand($now, $envelope, $stamp, $stack);
+    }
+
+    private function handleDemand(\DateTimeInterface $now, ScheduleEnvelope $envelope, PeriodicalStampInterface $stamp, StackInterface $stack): ScheduleEnvelope
+    {
+        $this->lastLoopTasks[$hash = ET::calculateHash($envelope)] = 1;
+        if ($this->timers->hasTimer($hash)) {
+            list($timer, $prevEnvelope) = $this->timers->getTimer($hash);
+            if ((string)$prevEnvelope->get(PeriodicalStampInterface::class) !== (string) $stamp) {
+                $this->timers->remove($hash);
+                $this->scheduleLoop->cancelTimer($timer);
+
+                ET::notice($envelope, "{{ task }} > Cron expression has been changed.");
+            } else {
+                $this->timers->refreshEnvelope($envelope);
+                return $stack->end()->handle($envelope, $stack);
+            }
+        }
+
+        $prevEnvelope = $envelope;
+        $timers = $this->timers;
+        $loop = $this->scheduleLoop;
+
+        $nextTime = $stamp->getNextRunDate($now = $loop->now());
+
+        $timers->attach($envelope, $runner = static function (/* $periodical = true*/) use ($timers, $prevEnvelope, $hash, $stack, $stamp, $loop, &$runner): ScheduleEnvelope {
+            if (null === ($envelope = $timers->findByHash($hash))) {
+                ET::notice($prevEnvelope, "{{ task }} > Task canceled. Someone detached an envelope from timers storage");
+                return ($clone = clone $stack)->end()->handle($envelope->without(PeriodicalStampInterface::class), $clone);
+            }
+
+            ET::info($envelope, "{{ task }} > Run schedule task.");
+
+            try {
+                $result = ($clone = clone $stack)->next()->handle($envelope->without(PeriodicalStampInterface::class), $clone);
+            } catch (\Throwable $e) {
+                $result = $envelope;
+                ET::error($envelope, "{{ task }} > Task ERRORED. {$e->getMessage()}", ['e' => $e]);
+            }
+
+            if (false !== (\func_get_args()[0] ?? null)) {
+                $nextTime = $stamp->getNextRunDate($now = $loop->now());
+                $delay = (float) $nextTime->format('U.u') - (float) $now->format('U.u');
+
+                $loop->addTimer($delay, $runner);
+                ET::debug($envelope, \sprintf("{{ task }} > was scheduled with delay %.6f sec.", $delay));
+            }
+
+            return $result;
+        });
+
+        $delay = (float) $nextTime->format('U.u') - (float) $now->format('U.u');
+
+        ET::debug($envelope, \sprintf("{{ task }} > was scheduled with delay %.6f sec.", $delay));
+        $loop->addTimer($delay, $runner);
+
+        return ($clone = clone $stack)->end()->handle($envelope, $clone);
+    }
+
+    public function onLoopEnd(): void
+    {
+        $this->cancelOrphanTasks();
+        $this->lastLoopTasks = [];
+    }
+
+    private function handleNoDemand(\DateTimeInterface $now, ScheduleEnvelope $envelope, PeriodicalStampInterface $stamp, StackInterface $stack): ScheduleEnvelope
+    {
+        if ($stamp instanceof ScheduleStamp) {
+            try {
+                $isDue = $this->checker->isDue($expr = $stamp->cronExpression(), $this->timeZone, $now);
+            } catch (\Throwable $e) {
+                ET::error($envelope, "{{ task }} > The cron expression $expr for task is invalid. {$e->getMessage()}", ['e' => $e]);
+                return $stack->end()->handle($envelope, $stack);
+            }
+        } else {
+            $currentTime = (int)(60 * \floor($now->getTimestamp()/60));
+            $now = new \DateTimeImmutable('@'.($currentTime-1), $now->getTimezone());
+
+            $nextRun = $stamp->getNextRunDate($now);
+            $nextRun = (int)(60 * \floor($nextRun->getTimestamp()/60));
+            $isDue = $nextRun === $currentTime;
         }
 
         if ($isDue) {
-            $this->log($envelope, "> The schedule task {{ task }} is due now!");
-            return $stack->next()->handle($envelope->without(ScheduleStamp::class), $stack);
+            ET::info($envelope, "{{ task }} > The schedule task is due now!");
+            return $stack->next()->handle($envelope->without(PeriodicalStampInterface::class), $stack);
         } else {
-            $this->log($envelope, "> Skipped the schedule task {{ task }} by cron restriction", 'debug');
+            ET::debug($envelope, "{{ task }} > Skipped the schedule task by cron restriction");
         }
 
         return $stack->end()->handle($envelope, $stack);
     }
 
-    private function log(ScheduleEnvelope $envelope, string $message, string $logLevel = 'info', array $context = []): void
+    private function cancelOrphanTasks(): void
     {
-        /** @var LoggerAwareStamp $stamp */
-        if (!$stamp = $envelope->get(LoggerAwareStamp::class)) {
-            return;
+        foreach ($this->timers->getTimers() as $hash => list($timer, $envelope)) {
+            if (!isset($this->lastLoopTasks[$hash])) {
+                ET::notice($envelope, "{{ task }} > task canceled - is not active anymore");
+
+                $this->scheduleLoop->cancelTimer($timer);
+                $this->timers->remove($hash);
+            }
         }
+    }
 
-        $args = $envelope->has(ArgumentsStamp::class) ? $envelope->get(ArgumentsStamp::class)->getArguments() : null;
-        $args = $args ? @json_encode($args, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null;
-        $taskName = $envelope->getCommand() . ($args ? ' ' . substr($args, 0, 120) : '');
-
-        $message = str_replace('{{ task }}', $taskName, $message);
-        $stamp->getLogger()->log($logLevel, $message, $context);
+    private function getNow(): \DateTimeImmutable
+    {
+        return $this->clock ? $this->clock->now() : new \DateTimeImmutable('now', $this->timeZone ? new \DateTimeZone($this->timeZone) : null);
     }
 }
