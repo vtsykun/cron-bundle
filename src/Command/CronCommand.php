@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Okvpn\Bundle\CronBundle\Command;
 
-use Okvpn\Bundle\CronBundle\Event\StartLoopEvent;
+use Okvpn\Bundle\CronBundle\Event\LoopEvent;
 use Okvpn\Bundle\CronBundle\Loader\ScheduleLoaderInterface;
 use Okvpn\Bundle\CronBundle\Logger\CronConsoleLogger;
 use Okvpn\Bundle\CronBundle\Model\EnvironmentStamp;
@@ -62,7 +62,8 @@ class CronCommand extends Command
             ->addOption('command', null, InputOption::VALUE_OPTIONAL, 'Run only selected command')
             ->addOption('demand', null, InputOption::VALUE_NONE, 'Start cron scheduler every one minute without exit')
             ->addOption('group', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'Run schedules for specific groups.')
-            ->addOption('time-limit', null, InputOption::VALUE_OPTIONAL, 'Run cron scheduler during this time (sec.)');
+            ->addOption('time-limit', null, InputOption::VALUE_OPTIONAL, 'Run cron scheduler during this time (sec.)')
+            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Debug periodical tasks without execution it.');
     }
 
     /**
@@ -83,33 +84,38 @@ class CronCommand extends Command
     {
         $output->writeln('Run scheduler without exit');
 
+        $loop = $this->scheduleLoop;
         if (($timeLimit = $input->getOption('time-limit')) > 0) {
-            $this->scheduleLoop->addTimer((int)$timeLimit, function () {
-                $this->scheduleLoop->stop();
+            $loop->addTimer((int)$timeLimit, static function () use ($loop) {
+                $loop->stop();
             });
         }
 
-        $schedulerRunner = function () use ($input, $output) {
+        $test = 0;
+        $schedulerRunner = function () use ($input, $output, $loop, &$test) {
             $runAt = \microtime(true);
-            if ($this->scheduleLoop instanceof ReactLoopAdapter) {
-                $this->scheduleLoop->setDefaultLoopTime($this->getCurrentDate());
+            if ($loop instanceof ReactLoopAdapter) {
+                $loop->setDefaultLoopTime($this->getCurrentDate());
             }
 
+            if ($runAt - $test < 2) {
+                $output->writeln("ERROR");
+            }
+            $test = $runAt;
+
             $this->scheduler($input, $output);
-            $output->writeln(sprintf('All schedule tasks completed in %.3f seconds', \microtime(true) - $runAt), OutputInterface::VERBOSITY_VERBOSE);
-            if ($this->scheduleLoop instanceof ReactLoopAdapter) {
-                $this->scheduleLoop->setDefaultLoopTime();
+            $output->writeln(sprintf('[%s] All schedule tasks completed in %.3f seconds', $this->getCurrentDate()->format('Y-m-d H:i:s.u'), \microtime(true) - $runAt), OutputInterface::VERBOSITY_VERBOSE);
+            if ($loop instanceof ReactLoopAdapter) {
+                $loop->setDefaultLoopTime();
             }
         };
 
-        if (null !== $this->dispatcher) {
-            $this->dispatcher->dispatch(new StartLoopEvent($this->scheduleLoop), StartLoopEvent::START_LOOP);
-        }
+        $this->dispatchLoopEvent(LoopEvent::LOOP_INIT);
 
-        $delayRun = 60 - fmod((float)$this->getCurrentDate()->format('U.u'), 60.0);
-        $this->scheduleLoop->addTimer($delayRun, function () use ($schedulerRunner) {
-            $this->scheduleLoop->futureTick($schedulerRunner);
-            $this->scheduleLoop->addPeriodicTimer(60, $schedulerRunner);
+        $delayRun = 60.0 - fmod((float)$this->getCurrentDate()->format('U.u'), 60.0);
+        $loop->addTimer($delayRun, static function () use ($schedulerRunner, $loop) {
+            $loop->futureTick($schedulerRunner);
+            $loop->addPeriodicTimer(60, $schedulerRunner);
         });
 
         $this->scheduleLoop->run();
@@ -132,11 +138,13 @@ class CronCommand extends Command
 
         $now = $this->getCurrentDate();
         $roundTime = (int)(round($now->getTimestamp()/60)*60);
-        $options['now'] = new \DateTimeImmutable('@'.$roundTime, $now->getTimezone());
         $options['demand'] = $input->getOption('demand');
+        $options['dry-run'] = $input->getOption('dry-run');
 
-        $envStamp = new EnvironmentStamp($options);
+        $envStamp = new EnvironmentStamp($options + ['now' => new \DateTimeImmutable('@'.$roundTime, $now->getTimezone()), 'dispatch-loop' => null !== $this->dispatcher]);
         $loggerStamp = $this->createLoggerStamp($output);
+
+        $this->dispatchLoopEvent(LoopEvent::LOOP_START);
 
         foreach ($this->loader->getSchedules($options) as $schedule) {
             if (null !== $command && $schedule->getCommand() !== $command) {
@@ -150,6 +158,8 @@ class CronCommand extends Command
 
             $this->scheduleRunner->execute($schedule);
         }
+
+        $this->dispatchLoopEvent(LoopEvent::LOOP_END);
     }
 
     protected function createLoggerStamp(OutputInterface $output)
@@ -165,5 +175,12 @@ class CronCommand extends Command
         }
 
         return $now;
+    }
+
+    protected function dispatchLoopEvent(string $name): void
+    {
+        if (null !== $this->dispatcher && null !== $this->scheduleLoop) {
+            $this->dispatcher->dispatch(new LoopEvent($this->scheduleLoop), $name);
+        }
     }
 }

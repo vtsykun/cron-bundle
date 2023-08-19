@@ -22,10 +22,20 @@ class TimerStorage
         $this->timers[ET::calculateHash($envelope)] = [$runner, $envelope];
     }
 
+    public function refreshEnvelope(ScheduleEnvelope $envelope): void
+    {
+        if ($this->hasTimer($hash = ET::calculateHash($envelope))) {
+            $this->timers[$hash][1] = $envelope;
+        }
+    }
+
     public function remove($envelope): void
     {
         $envelope = $envelope instanceof ScheduleEnvelope ? ET::calculateHash($envelope) : $envelope;
-        unset($this->timers[$envelope]);
+
+        if (\is_string($envelope)) {
+            unset($this->timers[$envelope]);
+        }
     }
 
     /**
@@ -53,7 +63,12 @@ class TimerStorage
     {
         $envelope = $envelope instanceof ScheduleEnvelope ? ET::calculateHash($envelope) : $envelope;
 
-        return isset($this->timers[$envelope]);
+        return $envelope && isset($this->timers[$envelope]);
+    }
+
+    public function findByHash(string $hash): ?ScheduleEnvelope
+    {
+        return $this->timers[$hash][1] ?? null;
     }
 
     public function find(string $command, /* array|string */ $args = null): ?ScheduleEnvelope

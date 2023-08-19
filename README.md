@@ -8,30 +8,35 @@ This bundle provides interfaces for registering and handle scheduled tasks withi
 [![License](https://poser.okvpn.org/okvpn/cron-bundle/license)](https://packagist.org/packages/okvpn/cron-bundle)
 
 ## Purpose
-This is a more simpler alternative of existing cron bundle without doctrine deps.
+This is a simpler alternative of existing cron bundle without doctrine deps.
 Here also added support middleware for customization handling cron jobs across a cluster install: 
 (Send jobs to message queue, like Symfony Messenger; locking; etc.).
-This allow to limit the number of parallel running processes and prioritized it.
+This allows to limit the number of parallel running processes and prioritized it.
 
 Features
 --------
 
 - Not need doctrine/database.
 - Docker friendly, runs as background command without `crond`.
+- Schedule tasks with one-millisecond precision.
+- More ways to randomize crons with `@random 3600` and `jitter`.
 - Integration with Symfony Messenger.
 - Load a cron job from a different storage (config.yml, tagged services, commands).
-- Support many engines to run cron (in parallel process, message queue, consistently), allow to use `random` expression.
+- Support many engines to run cron (in parallel process, message queue, consistently).
 - Support many types of cron handlers/command: (services, symfony commands, UNIX shell commands).
+- Can be used along with timers, subscriber and async I/O with React EventLoop, like Redis subscriber [clue/redis-react](https://github.com/clue/reactphp-redis).
 - Middleware and customization.
 
 ## Table of Contents
 
  - [Install](#install)
+ - [Commands](#commands)
  - [Registration a new scheduled task](#registration-a-new-scheduled-task)
  - [Configuration](#full-configuration-reference)
  - [Symfony Messenger Integration](#handle-cron-jobs-via-symfony-messenger)
  - [Your own Scheduled Tasks Loader](#your-own-scheduled-tasks-loaders)
  - [Handling cron jobs across a cluster](#handling-cron-jobs-across-a-cluster-or-custom-message-queue)
+ - [Use ReactPHP EventLoop](#use-reactphp-eventloop)
 
 Install
 ------
@@ -54,7 +59,7 @@ return [
 
 ##  Quick Usage 
 
-You can use `AsCron` attribute for autoconfigure.
+You can use `AsCron` or `AsPeriodicTask` attribute for autoconfigure.
 
 ```php
 <?php declare(strict_types=1);
@@ -62,8 +67,9 @@ You can use `AsCron` attribute for autoconfigure.
 namespace App\Service;
 
 use Okvpn\Bundle\CronBundle\Attribute\AsCron;
+use Okvpn\Bundle\CronBundle\Attribute\AsPeriodicTask;
 
-#[AsCron('*/5 * * * *')]
+#[AsCron('*/5 * * * *', messenger: true)]
 class SyncAppWorker
 {
     public function __invoke(array $arguments = []): void
@@ -71,9 +77,18 @@ class SyncAppWorker
         // code
     }
 }
+
+#[AsCron('*/10 * * * *', jitter: 60)]
+class Sync2AppWorker { /* ... */ } // Run each 10 minutes with 60 sec random delay 
+
+#[AsCron('@random 3600')]
+class Sync3AppWorker { /* ... */ } // Run with random 0-3600 sec 
+
+#[AsPeriodicTask('30 seconds', jitter: 5)]
+class Sync4AppWorker { /* ... */ } // Run each 30 sec with 5 sec random delay.
 ```
 
-### Commands
+## Commands
 
 Runs the current cron schedule
 
@@ -97,6 +112,14 @@ php bin/console okvpn:debug:cron --execute-one=7
 ```
 
 ![debug](docs/image1.png)
+
+#### Dry run cron tasks.
+
+```
+php bin/console okvpn:cron --dry-run --demand -vvv
+```
+
+![debug](docs/img2.png)
 
 ### Cron Expression
 
@@ -235,6 +258,12 @@ okvpn_cron:
       cron: "*/30 * * * *"
       async: true
       arguments: { '--transport': 15 } # command arguments or options
+      jitter: 60 # 60 sec random delay 
+
+    -
+      command: 'app:cron:wrfda-grib2' # run the command with 20 sec interval and 10 sec random delay 
+      interval: "20 seconds"
+      jitter: 10
 ```
 
 ## Full Configuration Reference
@@ -257,6 +286,9 @@ okvpn_cron:
     # Stamps it's markers that will add to each tasks.
     with_stamps:
         - 'Packagist\WebBundle\Cron\WorkerStamp'
+    
+    # service name for run cron in demand (Okvpn\Bundle\CronBundle\Runner\ScheduleLoopInterface)
+    loop_engine: ~
 
     tasks: # Defined tasks via configuration
       - 
@@ -416,6 +448,16 @@ numprocs=1
 See example of customization 
 [one](https://github.com/vtsykun/packeton/tree/master/src/Cron/WorkerMiddleware.php), 
 [two](https://github.com/vtsykun/packeton/tree/master/src/Cron/CronWorker.php)
+
+
+## Use ReactPHP EventLoop
+
+You can add your own periodic tasks directly to `Loop`. 
+The bundle uses a simple wrapper `Okvpn\Bundle\CronBundle\Runner\ScheduleLoopInterface` for the library 
+
+```php
+
+```
 
 License
 -------

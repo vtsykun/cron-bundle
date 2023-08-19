@@ -31,6 +31,7 @@ services:
             - '@Okvpn\Bundle\CronBundle\Runner\TimerStorage'
         tags:
             - { name: okvpn_cron.middleware, priority: 20 }
+            - { name: kernel.event_listener, event: 'loopEnd' }
 
     okvpn_cron.middleware.execute_service:
         class: Okvpn\Bundle\CronBundle\Middleware\ServiceInvokeEngine

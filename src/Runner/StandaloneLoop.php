@@ -24,7 +24,7 @@ class StandaloneLoop implements ScheduleLoopInterface
      */
     public function addTimer(float $interval, \Closure $callback): void
     {
-        $this->timers[] = [$callback, $interval+$this->getUnix(), 0];
+        $this->timers[] = [$callback, $interval + $this->getUnix(), 0];
         $this->needSort = true;
     }
 
@@ -33,7 +33,7 @@ class StandaloneLoop implements ScheduleLoopInterface
      */
     public function addPeriodicTimer(float $interval, \Closure $callback): void
     {
-        $this->timers[] = [$callback, $interval+$this->getUnix(), $interval];
+        $this->timers[] = [$callback, $interval + $this->getUnix(), $interval];
         $this->needSort = true;
     }
 
@@ -73,7 +73,7 @@ class StandaloneLoop implements ScheduleLoopInterface
             foreach ($this->timers as $i => $timer) {
                 $unix = $this->getUnix();
                 if ($timer[1] < $unix) {
-                    \call_user_func($timer[0]);
+                    $this->execute($timer);
                     if ($timer[2] === 0) {
                         unset($this->timers[$i]);
                     } else {
@@ -135,5 +135,10 @@ class StandaloneLoop implements ScheduleLoopInterface
     protected function sleep(float $seconds): void
     {
         $this->clock->sleep($seconds);
+    }
+
+    protected function execute(array $timer): void
+    {
+        \call_user_func($timer[0]);
     }
 }

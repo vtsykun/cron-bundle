@@ -7,9 +7,22 @@ namespace Okvpn\Bundle\CronBundle\Event;
 use Okvpn\Bundle\CronBundle\Runner\ScheduleLoopInterface;
 use Symfony\Contracts\EventDispatcher\Event;
 
-class StartLoopEvent extends Event
+class LoopEvent extends Event
 {
-    public const START_LOOP = 'startLoop';
+    /**
+     * Dispatch on init event loop, before $loop->run()
+     */
+    public const LOOP_INIT = 'loopInit';
+
+    /**
+     * Dispatch before running event loops. Executed every minutes
+     */
+    public const LOOP_START = 'loopStart';
+
+    /**
+     * Dispatch after running event loops. Executed every minutes
+     */
+    public const LOOP_END = 'loopEnd';
 
     private $loop;
 

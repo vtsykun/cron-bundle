@@ -23,7 +23,6 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
     /** @var ScheduleLoopInterface|null */
     private $scheduleLoop;
 
-    private $lastLoopId = null;
     private $lastLoopTasks = [];
     private $timers;
 
@@ -41,57 +40,86 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
      */
     public function handle(ScheduleEnvelope $envelope, StackInterface $stack): ScheduleEnvelope
     {
+        $env = $envelope->has(EnvironmentStamp::class) ? $envelope->get(EnvironmentStamp::class)->toArray() : [];
+        // For testing usage. drops next middlewares
+        if ($dryRun = ($env['dry-run'] ?? false)) {
+            $stack->end();
+        }
+
         if (!$stamp = $envelope->get(PeriodicalStampInterface::class)) {
-            ET::info($envelope, "{{ task }} > Run schedule task.");
+            $dryRun ? null : ET::info($envelope, "{{ task }} > Run schedule task.");
             return $stack->next()->handle($envelope, $stack);
         }
 
-        $env = $envelope->get(EnvironmentStamp::class);
-        $useDemand = $env && $env->get('demand');
-        $noLoop = $env ? $env->get('no-loop') ?? false : false;
-        $now = $env ? $env->get('now') : null;
-        $now = $now instanceof \DateTimeInterface ? $now : $this->getNow();
+        $useDemand = $env['demand'] ?? false;
+        $noLoop = $env['no-loop'] ?? false;
+        $now = ($env['now'] ?? null) instanceof \DateTimeInterface ? $env['now'] : $this->getNow();
 
         return true === $useDemand && null !== $this->scheduleLoop && false === $noLoop ?
             $this->handleDemand($now, $envelope, $stamp, $stack) :
             $this->handleNoDemand($now, $envelope, $stamp, $stack);
     }
 
-    private function handleDemand(\DateTimeInterface $loopTime, ScheduleEnvelope $envelope, PeriodicalStampInterface $stamp, StackInterface $stack): ScheduleEnvelope
+    private function handleDemand(\DateTimeInterface $now, ScheduleEnvelope $envelope, PeriodicalStampInterface $stamp, StackInterface $stack): ScheduleEnvelope
     {
-        $loopId = (int)(60 * floor($loopTime->getTimestamp()/60));
-        if ($this->lastLoopId !== $loopId) {
-            $this->cancelOrphanTasks();
-            $this->lastLoopId = $loopId;
+        $this->lastLoopTasks[$hash = ET::calculateHash($envelope)] = 1;
+        if ($this->timers->hasTimer($hash)) {
+            list($timer, $prevEnvelope) = $this->timers->getTimer($hash);
+            if ((string)$prevEnvelope->get(PeriodicalStampInterface::class) !== (string) $stamp) {
+                $this->timers->remove($hash);
+                $this->scheduleLoop->cancelTimer($timer);
+
+                ET::notice($envelope, "{{ task }} > Cron expression has been changed.");
+            } else {
+                $this->timers->refreshEnvelope($envelope);
+                return $stack->end()->handle($envelope, $stack);
+            }
         }
 
-        $taskHash = ET::calculateHash($envelope);
-        $this->lastLoopTasks[$taskHash] = 1;
-        if ($this->timers->hasTimer($taskHash)) {
-            return $stack->end()->handle($envelope, $stack);
-        }
-
+        $prevEnvelope = $envelope;
+        $timers = $this->timers;
         $loop = $this->scheduleLoop;
+
         $nextTime = $stamp->getNextRunDate($now = $loop->now());
 
-        $this->timers->attach($envelope, $runner = static function () use ($envelope, $stack, $stamp, $loop, &$runner) {
+        $timers->attach($envelope, $runner = static function (/* $periodical = true*/) use ($timers, $prevEnvelope, $hash, $stack, $stamp, $loop, &$runner): ScheduleEnvelope {
+            if (null === ($envelope = $timers->findByHash($hash))) {
+                ET::notice($prevEnvelope, "{{ task }} > Task canceled. Someone detached an envelope from timers storage");
+                return ($clone = clone $stack)->end()->handle($envelope->without(PeriodicalStampInterface::class), $clone);
+            }
+
             ET::info($envelope, "{{ task }} > Run schedule task.");
 
-            ($clone = clone $stack)->next()->handle($envelope->without(PeriodicalStampInterface::class), $clone);
+            try {
+                $result = ($clone = clone $stack)->next()->handle($envelope->without(PeriodicalStampInterface::class), $clone);
+            } catch (\Throwable $e) {
+                $result = $envelope;
+                ET::error($envelope, "{{ task }} > Task ERRORED. {$e->getMessage()}", ['e' => $e]);
+            }
 
-            $nextTime = $stamp->getNextRunDate($now = $loop->now());
-            $delay = (float) $nextTime->format('U.u') - (float) $now->format('U.u');
-            $loop->addTimer($delay, $runner);
+            if (false !== (\func_get_args()[0] ?? null)) {
+                $nextTime = $stamp->getNextRunDate($now = $loop->now());
+                $delay = (float) $nextTime->format('U.u') - (float) $now->format('U.u');
 
-            ET::debug($envelope, "{{ task }} > was scheduled with delay $delay sec.");
+                $loop->addTimer($delay, $runner);
+                ET::debug($envelope, \sprintf("{{ task }} > was scheduled with delay %.6f sec.", $delay));
+            }
+
+            return $result;
         });
 
         $delay = (float) $nextTime->format('U.u') - (float) $now->format('U.u');
 
-        ET::debug($envelope, "{{ task }} > was scheduled with delay $delay sec.");
+        ET::debug($envelope, \sprintf("{{ task }} > was scheduled with delay %.6f sec.", $delay));
         $loop->addTimer($delay, $runner);
 
         return ($clone = clone $stack)->end()->handle($envelope, $clone);
+    }
+
+    public function onLoopEnd(): void
+    {
+        $this->cancelOrphanTasks();
+        $this->lastLoopTasks = [];
     }
 
     private function handleNoDemand(\DateTimeInterface $now, ScheduleEnvelope $envelope, PeriodicalStampInterface $stamp, StackInterface $stack): ScheduleEnvelope
@@ -104,11 +132,11 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
                 return $stack->end()->handle($envelope, $stack);
             }
         } else {
-            $currentTime = (int)(60 * floor($now->getTimestamp()/60));
+            $currentTime = (int)(60 * \floor($now->getTimestamp()/60));
             $now = new \DateTimeImmutable('@'.($currentTime-1), $now->getTimezone());
 
             $nextRun = $stamp->getNextRunDate($now);
-            $nextRun = (int)(60 * floor($nextRun->getTimestamp()/60));
+            $nextRun = (int)(60 * \floor($nextRun->getTimestamp()/60));
             $isDue = $nextRun === $currentTime;
         }
 
@@ -132,8 +160,6 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
                 $this->timers->remove($hash);
             }
         }
-
-        $this->lastLoopTasks = [];
     }
 
     private function getNow(): \DateTimeImmutable
