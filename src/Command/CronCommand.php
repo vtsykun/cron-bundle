@@ -91,17 +91,11 @@ class CronCommand extends Command
             });
         }
 
-        $test = 0;
-        $schedulerRunner = function () use ($input, $output, $loop, &$test) {
+        $schedulerRunner = function () use ($input, $output, $loop) {
             $runAt = \microtime(true);
             if ($loop instanceof ReactLoopAdapter) {
                 $loop->setDefaultLoopTime($this->getCurrentDate());
             }
-
-            if ($runAt - $test < 2) {
-                $output->writeln("ERROR");
-            }
-            $test = $runAt;
 
             $this->scheduler($input, $output);
             $output->writeln(sprintf('[%s] All schedule tasks completed in %.3f seconds', $this->getCurrentDate()->format('Y-m-d H:i:s.u'), \microtime(true) - $runAt), OutputInterface::VERBOSITY_VERBOSE);

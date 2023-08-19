@@ -65,6 +65,7 @@ final class Configuration implements ConfigurationInterface
                         ->end()
                         ->integerNode('timeout')->end()
                         ->scalarNode('interval')->end()
+                        ->integerNode('jitter')->end()
                     ->end()
                 ->end()
             ->end();

@@ -225,6 +225,8 @@ To use this option need to install symfony [lock component](https://symfony.com/
 - `arguments` - Array of arguments, used to run symfony console commands or pass arguments to handler. 
 - `priority` - Sorting priority.
 - `group` - Group name, see Cron Grouping section.
+- `jitter` - Random delay 0-60 sec
+- `interval` - Run periodic tasks by interval. Examples `10`, `10 seconds`, `1 day`.
 - `messenger` - Send jobs into Messenger Bus. Default `false`. You also can specify transport here `{routing: async}`,
 see [Symfony Routing Messages to a Transport](https://symfony.com/doc/current/messenger.html#routing-messages-to-a-transport) 
 
@@ -453,10 +455,76 @@ See example of customization
 ## Use ReactPHP EventLoop
 
 You can add your own periodic tasks directly to `Loop`. 
-The bundle uses a simple wrapper `Okvpn\Bundle\CronBundle\Runner\ScheduleLoopInterface` for the library 
+The bundle uses a simple wrapper `Okvpn\Bundle\CronBundle\Runner\ScheduleLoopInterface` for the library `react/event-loop`
 
 ```php
+<?php
+use Okvpn\Bundle\CronBundle\Event\LoopEvent;
+use Okvpn\Bundle\CronBundle\Runner\TimerStorage;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
+class CronStartListener
+{
+    #[AsEventListener('loopInit')]
+    public function loopInit(LoopEvent $event): void
+    {
+        $dataDogS = $this->getDDog();
+        $event->getLoop()->addPeriodicTimer(6.0, static function () use ($dataDogS) {
+            $dataDogS->set('crond', getmypid());
+        });
+    }
+}
+```
+
+#### Configure ReactPHP adapter
+
+Need to install [react/event-loop](https://github.com/reactphp/event-loop) if you want to use with async I/O, for example for handle websockets, redis.
+
+```
+composer req react/event-loop 
+```
+
+```yaml
+# Add file to config/packages/*
+okvpn_cron:
+    loop_engine: okvpn_cron.react_loop # service name
+```
+
+```php
+<?php
+use Okvpn\Bundle\CronBundle\Event\LoopEvent;
+use Okvpn\Bundle\CronBundle\Runner\TimerStorage;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Okvpn\Bundle\CronBundle\Runner\TimerStorage;
+use React\EventLoop\Loop;
+
+class CronStartListener
+{
+    public function __construct(
+        private TimerStorage $timers,
+    ) {
+    }
+
+    #[AsEventListener('loopInit')]
+    public function loopInit(LoopEvent $event): void
+    {
+        $redis = new RedisClient('127.0.0.1:6379');
+        $timers = $this->timers;
+        $loop = $event->getLoop();
+
+        $redis->on('message', static function (string $channel, string $payload) use ($timers, $loop) {
+            [$command, $args] = unserialize($payload);
+            if ($timers->hasTimer($envelope = $timers->find($command, $args))) {
+                [$timer] = $timers->getTimer($envelope);
+                $loop->futureTick($timer);
+            }
+        });
+
+        Loop::addPeriodicTimer(5.0, static function () use ($redis) {
+            $redis->ping();
+        });
+    }
+}
 ```
 
 License

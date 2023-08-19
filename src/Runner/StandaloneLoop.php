@@ -48,7 +48,6 @@ class StandaloneLoop implements ScheduleLoopInterface
             }
         }
 
-        $this->timers = \array_values($this->timers);
         $this->needSort = true;
     }
 
