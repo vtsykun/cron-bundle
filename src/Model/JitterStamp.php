@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Okvpn\Bundle\CronBundle\Model;
 
+use Okvpn\Bundle\CronBundle\Utils\CronUtils;
+
 final class JitterStamp implements CommandStamp, PeriodicalStampInterface
 {
     private $stamp;
@@ -23,7 +25,7 @@ final class JitterStamp implements CommandStamp, PeriodicalStampInterface
         $nextRun = $this->stamp->getNextRunDate($run);
         $nextRun = (float)$nextRun->format('U.u') + $this->maxSeconds * random_int(0, PHP_INT_MAX)/PHP_INT_MAX;
 
-        return new \DateTimeImmutable('@'. round($nextRun, 6), $run->getTimezone());
+        return CronUtils::toDate($nextRun, $run);
     }
 
     /**

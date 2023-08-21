@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Okvpn\Bundle\CronBundle\React;
 
 use Okvpn\Bundle\CronBundle\Runner\ScheduleLoopInterface;
+use Okvpn\Bundle\CronBundle\Utils\CronUtils;
 use React\EventLoop\ExtEvLoop;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
@@ -102,7 +103,7 @@ class ReactLoopAdapter implements ScheduleLoopInterface
 
         $now = ($this->nowAccessor)();
         if (null !== $this->timeZone) {
-            $now = new \DateTimeImmutable('@'.$now->format('U.u'), new \DateTimeZone($this->timeZone));
+            $now = CronUtils::toDate($now, $this->timeZone);
         }
 
         return $now;
@@ -133,7 +134,7 @@ class ReactLoopAdapter implements ScheduleLoopInterface
         if ($this->loop instanceof ExtEvLoop && (new \ReflectionObject($this->loop))->hasProperty('loop')) {
             return \Closure::bind(function (): \DateTimeImmutable {
                 $now = $this->loop->now();
-                return new \DateTimeImmutable('@'.round($now, 6));
+                return CronUtils::toDate($now);
             }, $this->loop, ExtEvLoop::class);
         }
 

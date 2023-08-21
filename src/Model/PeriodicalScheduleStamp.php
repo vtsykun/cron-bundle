@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Okvpn\Bundle\CronBundle\Model;
 
+use Okvpn\Bundle\CronBundle\Utils\CronUtils;
+
 class PeriodicalScheduleStamp implements CommandStamp, PeriodicalStampInterface
 {
     private $interval;
@@ -11,14 +13,14 @@ class PeriodicalScheduleStamp implements CommandStamp, PeriodicalStampInterface
 
     public function __construct(
        /* string|int|float|\DateInterval */ $interval,
-       /* string|int|float|\DateTimeImmutable */ $from = 0,
+       /* string|int|float|\DateTimeImmutable */ $from = 0
     ) {
         $this->from = \is_string($from) && !\is_numeric($from) ? (new \DateTimeImmutable($from))->getTimestamp() : (int)$from;
-        $interval = \is_string($interval) && !\is_numeric($interval) ? (new \DateInterval($interval)) : $interval;
+        $interval = \is_string($interval) && !\is_numeric($interval) ? ('P' === ($interval[0] ?? '') ? new \DateInterval($interval) : \DateInterval::createFromDateString($interval)) : $interval;
 
         if ($interval instanceof \DateInterval) {
-            $time1 = new \DateTime('now');
-            $interval = (float)(clone $time1)->add($interval)->format('U.u') - (float)$time1->format('U.u');
+            $time1 = new \DateTimeImmutable('now');
+            $interval = (float)$time1->add($interval)->format('U.u') - (float)$time1->format('U.u');
         }
 
         $this->interval = (float)$interval;
@@ -34,7 +36,7 @@ class PeriodicalScheduleStamp implements CommandStamp, PeriodicalStampInterface
 
         $delay = $this->interval - fmod($unix, $this->interval);
 
-        return new \DateTimeImmutable('@'.round($delay + $now, 6), $run->getTimezone());
+        return CronUtils::toDate($delay + $now, $run);
     }
 
     /**

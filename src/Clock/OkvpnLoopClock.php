@@ -45,7 +45,7 @@ final class OkvpnLoopClock /*implements ClockInterface*/
         }
     }
 
-    public function withTimeZone(/*\DateTimeZone|string*/ $timezone): static
+    public function withTimeZone(/*\DateTimeZone|string*/ $timezone)
     {
         $clone = clone $this;
         $clone->timezone = \is_string($timezone) ? new \DateTimeZone($timezone) : $timezone;

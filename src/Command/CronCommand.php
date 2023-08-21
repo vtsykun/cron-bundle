@@ -12,6 +12,7 @@ use Okvpn\Bundle\CronBundle\Model\LoggerAwareStamp;
 use Okvpn\Bundle\CronBundle\React\ReactLoopAdapter;
 use Okvpn\Bundle\CronBundle\Runner\ScheduleLoopInterface;
 use Okvpn\Bundle\CronBundle\Runner\ScheduleRunnerInterface;
+use Okvpn\Bundle\CronBundle\Utils\CronUtils;
 use Psr\Clock\ClockInterface as PsrClockInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -135,7 +136,7 @@ class CronCommand extends Command
         $options['demand'] = $input->getOption('demand');
         $options['dry-run'] = $input->getOption('dry-run');
 
-        $envStamp = new EnvironmentStamp($options + ['now' => new \DateTimeImmutable('@'.$roundTime, $now->getTimezone()), 'dispatch-loop' => null !== $this->dispatcher]);
+        $envStamp = new EnvironmentStamp($options + ['now' => CronUtils::toDate($roundTime, $now) , 'dispatch-loop' => null !== $this->dispatcher]);
         $loggerStamp = $this->createLoggerStamp($output);
 
         $this->dispatchLoopEvent(LoopEvent::LOOP_START);
@@ -165,7 +166,7 @@ class CronCommand extends Command
     {
         $now = $this->clock ? $this->clock->now() : new \DateTimeImmutable('now');
         if (null !== $this->timezone) {
-            $now = new \DateTimeImmutable('@'.$now->format('U.u'), new \DateTimeZone($this->timezone));
+            $now = CronUtils::toDate($now, $this->timezone);
         }
 
         return $now;

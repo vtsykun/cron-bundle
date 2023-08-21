@@ -12,6 +12,7 @@ use Okvpn\Bundle\CronBundle\Model\ScheduleEnvelope;
 use Okvpn\Bundle\CronBundle\Model\ScheduleStamp;
 use Okvpn\Bundle\CronBundle\Runner\ScheduleLoopInterface;
 use Okvpn\Bundle\CronBundle\Runner\TimerStorage;
+use Okvpn\Bundle\CronBundle\Utils\CronUtils;
 use Psr\Clock\ClockInterface as PsrClockInterface;
 
 final class CronMiddlewareEngine implements MiddlewareEngineInterface
@@ -133,7 +134,7 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
             }
         } else {
             $currentTime = (int)(60 * \floor($now->getTimestamp()/60));
-            $now = new \DateTimeImmutable('@'.($currentTime-1), $now->getTimezone());
+            $now = CronUtils::toDate(($currentTime-1), $now);
 
             $nextRun = $stamp->getNextRunDate($now);
             $nextRun = (int)(60 * \floor($nextRun->getTimestamp()/60));

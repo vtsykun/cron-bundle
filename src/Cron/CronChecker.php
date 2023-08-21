@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Okvpn\Bundle\CronBundle\Cron;
 
 use Cron\CronExpression;
+use Okvpn\Bundle\CronBundle\Utils\CronUtils;
 
 class CronChecker
 {
@@ -54,7 +55,7 @@ class CronChecker
         $current = \is_string($current) ? new \DateTime($current) : $current;
         $next = $current->getTimestamp() + \random_int(0, $cron);
 
-        return new \DateTimeImmutable('@'.$next, \is_string($timeZone) ? new \DateTimeZone($timeZone) : $timeZone);
+        return CronUtils::toDate($next, $timeZone);
     }
 
     public static function isRandomDue(string $cron): bool
