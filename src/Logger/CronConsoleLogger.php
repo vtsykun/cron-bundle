@@ -67,7 +67,7 @@ class CronConsoleLogger extends AbstractLogger
 
         // Write to the error output if necessary and available
         if (self::ERROR === $this->formatLevelMap[$level]) {
-            if ($this->output instanceof ConsoleOutputInterface) {
+            if ($output instanceof ConsoleOutputInterface) {
                 $output = $output->getErrorOutput();
             }
             $this->errored = true;

@@ -100,7 +100,6 @@ class ReactLoopAdapter implements ScheduleLoopInterface
             $this->nowAccessor = $this->createLoopAccessor();
         }
 
-
         $now = ($this->nowAccessor)();
         if (null !== $this->timeZone) {
             $now = CronUtils::toDate($now, $this->timeZone);

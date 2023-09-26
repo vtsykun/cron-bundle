@@ -5,9 +5,17 @@ declare(strict_types=1);
 namespace Okvpn\Bundle\CronBundle\Messenger;
 
 use Okvpn\Bundle\CronBundle\Runner\ScheduleRunnerInterface;
+use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
-final class CronMessageHandler implements MessageHandlerInterface
+if (!interface_exists(MessageHandlerInterface::class)) {
+    interface OkCronMessageHandlerBridge {}
+} else {
+    interface OkCronMessageHandlerBridge extends MessageHandlerInterface {}
+}
+
+#[AsMessageHandler]
+final class CronMessageHandler implements OkCronMessageHandlerBridge
 {
     private $runner;
 
