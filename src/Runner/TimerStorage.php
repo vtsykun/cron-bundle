@@ -73,7 +73,7 @@ class TimerStorage
 
     public function find(string $command, /* array|string */ $args = null): ?ScheduleEnvelope
     {
-        foreach ($this->timers as list($timer, $envelope)) {
+        foreach ($this->timers as [$timer, $envelope]) {
             if ($envelope->getCommand() === $command && (null === $args || ET::argsHash($envelope) === ET::argsHash($args))) {
                 return $envelope;
             }

@@ -87,6 +87,6 @@ class EnvelopeTools
             return call_user_func(static::$hasher, $envelope);
         }
 
-        return sha1(static::shortTaskName($envelope));
+        return sha1(static::taskName($envelope));
     }
 }

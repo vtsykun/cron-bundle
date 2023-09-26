@@ -65,7 +65,7 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
     {
         $this->lastLoopTasks[$hash = ET::calculateHash($envelope)] = 1;
         if ($this->timers->hasTimer($hash)) {
-            list($timer, $prevEnvelope) = $this->timers->getTimer($hash);
+            [$timer, $prevEnvelope] = $this->timers->getTimer($hash);
             if ((string)$prevEnvelope->get(PeriodicalStampInterface::class) !== (string) $stamp) {
                 $this->timers->remove($hash);
                 $this->scheduleLoop->cancelTimer($timer);
@@ -153,7 +153,7 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
 
     private function cancelOrphanTasks(): void
     {
-        foreach ($this->timers->getTimers() as $hash => list($timer, $envelope)) {
+        foreach ($this->timers->getTimers() as $hash => [$timer, $envelope]) {
             if (!isset($this->lastLoopTasks[$hash])) {
                 ET::notice($envelope, "{{ task }} > task canceled - is not active anymore");
 
