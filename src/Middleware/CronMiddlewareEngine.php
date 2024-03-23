@@ -27,7 +27,7 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
     private $lastLoopTasks = [];
     private $timers;
 
-    public function __construct(CronChecker $checker, string $timeZone = null, PsrClockInterface $clock = null, ScheduleLoopInterface $scheduleLoop = null, TimerStorage $timers = null)
+    public function __construct(CronChecker $checker, ?string $timeZone = null, ?PsrClockInterface $clock = null, ?ScheduleLoopInterface $scheduleLoop = null, ?TimerStorage $timers = null)
     {
         $this->timeZone = $timeZone;
         $this->checker = $checker;

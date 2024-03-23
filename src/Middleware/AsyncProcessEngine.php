@@ -13,7 +13,7 @@ final class AsyncProcessEngine implements MiddlewareEngineInterface
 {
     private $tempDir;
 
-    public function __construct(string $sysTempDir = null)
+    public function __construct(?string $sysTempDir = null)
     {
         $this->tempDir = $sysTempDir ?: \sys_get_temp_dir();
     }

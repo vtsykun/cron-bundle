@@ -39,7 +39,7 @@ class CronCommand extends Command
      * @param PsrClockInterface|null $clock
      * @param string|null $timezone
      */
-    public function __construct(ScheduleRunnerInterface $scheduleRunner, ScheduleLoaderInterface $loader, EventDispatcherInterface $dispatcher = null, ScheduleLoopInterface $scheduleLoop = null, PsrClockInterface $clock = null, string $timezone = null)
+    public function __construct(ScheduleRunnerInterface $scheduleRunner, ScheduleLoaderInterface $loader, ?EventDispatcherInterface $dispatcher = null, ?ScheduleLoopInterface $scheduleLoop = null, ?PsrClockInterface $clock = null, ?string $timezone = null)
     {
         $this->scheduleRunner = $scheduleRunner;
         $this->loader = $loader;
