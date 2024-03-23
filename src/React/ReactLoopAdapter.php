@@ -21,7 +21,7 @@ class ReactLoopAdapter implements ScheduleLoopInterface
     private $loopTime;
     private $timeZone;
 
-    public function __construct(LoopInterface $loop = null, string $timeZone = null)
+    public function __construct(?LoopInterface $loop = null, ?string $timeZone = null)
     {
         $this->loop = $loop;
         $this->timeZone = $timeZone;
@@ -108,7 +108,7 @@ class ReactLoopAdapter implements ScheduleLoopInterface
         return $now;
     }
 
-    public function setDefaultLoopTime(\DateTimeImmutable $loopTime = null): void
+    public function setDefaultLoopTime(?\DateTimeImmutable $loopTime = null): void
     {
         $this->loopTime = $loopTime;
     }

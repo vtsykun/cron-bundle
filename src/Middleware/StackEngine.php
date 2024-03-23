@@ -16,7 +16,7 @@ final class StackEngine implements StackInterface, MiddlewareEngineInterface
     /**
      * @param \Iterator|null $iterator
      */
-    public function __construct(\Iterator $iterator = null)
+    public function __construct(?\Iterator $iterator = null)
     {
         $this->iterator = $iterator;
     }

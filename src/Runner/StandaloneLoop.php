@@ -14,7 +14,7 @@ class StandaloneLoop implements ScheduleLoopInterface
     protected $needSort = false;
     protected $running = false;
 
-    public function __construct(ClockInterface $clock = null, string $timeZone = null)
+    public function __construct(?ClockInterface $clock = null, ?string $timeZone = null)
     {
         $this->clock = $clock ?: new OkvpnLoopClock($timeZone);
     }

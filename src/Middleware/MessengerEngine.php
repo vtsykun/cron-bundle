@@ -14,7 +14,7 @@ final class MessengerEngine implements MiddlewareEngineInterface
 {
     private $messageBus;
 
-    public function __construct(MessageBusInterface $messageBus = null)
+    public function __construct(?MessageBusInterface $messageBus = null)
     {
         $this->messageBus = $messageBus;
     }

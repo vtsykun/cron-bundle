@@ -22,7 +22,7 @@ final class ConsoleCommandEngine implements MiddlewareEngineInterface
      *
      * @param KernelInterface|null $kernel
      */
-    public function __construct(KernelInterface $kernel = null)
+    public function __construct(?KernelInterface $kernel = null)
     {
         $this->kernel = $kernel;
     }

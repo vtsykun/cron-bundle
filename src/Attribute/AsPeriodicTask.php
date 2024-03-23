@@ -16,10 +16,10 @@ class AsPeriodicTask
 
     public function __construct(
         /*int|string */ $interval,
-        bool $lock = null,
-        bool $async = null,
-        bool $messenger = null,
-        int $jitter = null,
+        ?bool $lock = null,
+        ?bool $async = null,
+        ?bool $messenger = null,
+        ?int $jitter = null,
         array $options = [],
     ) {
         $this->async = $async;
