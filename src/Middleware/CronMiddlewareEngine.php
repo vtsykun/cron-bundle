@@ -103,7 +103,7 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
                 $delay = (float) $nextTime->format('U.u') - (float) $now->format('U.u');
 
                 $loop->addTimer($delay, $runner);
-                ET::debug($envelope, \sprintf("{{ task }} > was scheduled with delay %.6f sec.", $delay));
+                ET::debug($envelope, \sprintf("{{ task }} > was scheduled with delay %.6F sec.", $delay));
             }
 
             return $result;
@@ -111,7 +111,7 @@ final class CronMiddlewareEngine implements MiddlewareEngineInterface
 
         $delay = (float) $nextTime->format('U.u') - (float) $now->format('U.u');
 
-        ET::debug($envelope, \sprintf("{{ task }} > was scheduled with delay %.6f sec.", $delay));
+        ET::debug($envelope, \sprintf("{{ task }} > was scheduled with delay %.6F sec.", $delay));
         $loop->addTimer($delay, $runner);
 
         return ($clone = clone $stack)->end()->handle($envelope, $clone);
