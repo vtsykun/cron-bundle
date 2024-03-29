@@ -9,7 +9,7 @@ namespace Okvpn\Bundle\CronBundle\Utils;
  */
 final class CronUtils
 {
-    public static function toDate(/*float|string|\DateTimeInterface */ $unix, /* \DateTimeInterface|\DateTimeZone|string|null */ $timezone): \DateTimeImmutable
+    public static function toDate(/*float|string|\DateTimeInterface */ $unix, /* \DateTimeInterface|\DateTimeZone|string|null */ $timezone = null): \DateTimeImmutable
     {
         $timezone = $timezone instanceof \DateTimeInterface ? $timezone->getTimezone() : $timezone;
         $timezone = \is_string($timezone) ? new \DateTimeZone($timezone) : $timezone;
@@ -18,6 +18,6 @@ final class CronUtils
             $unix = $unix->format('U.u');
         }
 
-        return \DateTimeImmutable::createFromFormat("U.u", sprintf("%.6f", $unix), $timezone);
+        return \DateTimeImmutable::createFromFormat("U.u", sprintf("%.6F", $unix), $timezone);
     }
 }
